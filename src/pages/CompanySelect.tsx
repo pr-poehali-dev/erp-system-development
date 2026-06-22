@@ -158,7 +158,7 @@ const CompanySelect = () => {
 
         <footer className="px-10 py-5 flex items-center justify-between text-xs text-[hsl(30_6%_50%)] border-t border-[hsl(40_15%_85%)]">
           <span><b className="text-[hsl(30_8%_25%)]">Territory ERP</b> &nbsp;·&nbsp; Система управления мебельным производством</span>
-          <span>© 2024 Все права защищены</span>
+          <span>info@неостандарт.рф &nbsp;·&nbsp; © 2026 Все права защищены</span>
         </footer>
       </main>
     </div>

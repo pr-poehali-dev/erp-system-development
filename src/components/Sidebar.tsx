@@ -68,7 +68,7 @@ const Sidebar = () => {
           </div>
           <div className="min-w-0">
             <div className="text-xs font-medium text-foreground">Техническая поддержка</div>
-            <div className="text-[11px] text-gold/80 truncate">support@mebel-system.ru</div>
+            <div className="text-[11px] text-gold/80 truncate">info@неостандарт.рф</div>
           </div>
         </div>
       </div>

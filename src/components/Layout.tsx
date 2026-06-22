@@ -10,6 +10,12 @@ interface LayoutProps {
 }
 
 const Layout = ({ title, subtitle, titleIcon, actions, children }: LayoutProps) => {
+  const today = new Date();
+  const end = new Date(today);
+  end.setDate(today.getDate() + 6);
+  const fmt = (d: Date) => `${d.getDate()} ${['янв','фев','мар','апр','май','июн','июл','авг','сен','окт','ноя','дек'][d.getMonth()]}`;
+  const dateRange = `${fmt(today)} — ${fmt(end)} ${end.getFullYear()}`;
+
   return (
     <div className="flex min-h-screen bg-background">
       <Sidebar />
@@ -36,11 +42,14 @@ const Layout = ({ title, subtitle, titleIcon, actions, children }: LayoutProps) 
             </button>
             <button className="flex items-center gap-2 px-3.5 py-2.5 rounded-xl glass-card text-sm hidden xl:flex">
               <Icon name="Calendar" size={15} className="text-gold" />
-              23 — 29 мая 2024
+              {dateRange}
             </button>
             <button className="relative w-10 h-10 rounded-xl glass-card flex items-center justify-center hover:border-gold/30 transition-colors">
               <Icon name="Bell" size={17} />
               <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-status-crit text-white text-[10px] font-bold flex items-center justify-center">12</span>
+            </button>
+            <button className="w-10 h-10 rounded-xl glass-card flex items-center justify-center hover:border-gold/30 transition-colors hidden xl:flex">
+              <Icon name="HelpCircle" size={17} />
             </button>
             <div className="flex items-center gap-2.5 pl-2 border-l border-border">
               <div className="w-9 h-9 rounded-full gold-gradient flex items-center justify-center text-background font-bold text-sm">А</div>

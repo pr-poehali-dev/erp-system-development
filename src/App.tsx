@@ -9,7 +9,21 @@ import CompanySelect from "./pages/CompanySelect";
 import Planner from "./pages/Planner";
 import Reports from "./pages/Reports";
 import Proposals from "./pages/Proposals";
-import Placeholder from "./pages/Placeholder";
+import CRM from "./pages/CRM";
+import Measurements from "./pages/Measurements";
+import ControlMeasurements from "./pages/ControlMeasurements";
+import Clients from "./pages/Clients";
+import Orders from "./pages/Orders";
+import Production from "./pages/Production";
+import Supply from "./pages/Supply";
+import Warehouse from "./pages/Warehouse";
+import Logistics from "./pages/Logistics";
+import Installation from "./pages/Installation";
+import Finance from "./pages/Finance";
+import Marketing from "./pages/Marketing";
+import Staff from "./pages/Staff";
+import Technology from "./pages/Technology";
+import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -23,24 +37,24 @@ const App = () => (
         <Routes>
           <Route path="/" element={<CompanySelect />} />
           <Route path="/dashboard" element={<Index />} />
-          <Route path="/planner" element={<Planner />} />
-          <Route path="/reports" element={<Reports />} />
+          <Route path="/crm" element={<CRM />} />
+          <Route path="/clients" element={<Clients />} />
+          <Route path="/measurements" element={<Measurements />} />
+          <Route path="/control-measurements" element={<ControlMeasurements />} />
           <Route path="/proposals" element={<Proposals />} />
-          <Route path="/crm" element={<Placeholder title="CRM / Сделки" icon="Users" subtitle="Воронка продаж и канбан сделок" />} />
-          <Route path="/clients" element={<Placeholder title="Клиенты" icon="Contact" subtitle="База клиентов и история коммуникаций" />} />
-          <Route path="/measurements" element={<Placeholder title="Замеры" icon="Ruler" subtitle="Первичные замеры и чек-листы" />} />
-          <Route path="/control-measurements" element={<Placeholder title="Контрольные замеры" icon="ClipboardCheck" subtitle="Контроль перед производством" />} />
-          <Route path="/orders" element={<Placeholder title="Заказы" icon="ClipboardList" subtitle="Полный цикл заказа" />} />
-          <Route path="/technology" element={<Placeholder title="Технология" icon="Cog" subtitle="Чертежи и согласования" />} />
-          <Route path="/supply" element={<Placeholder title="Снабжение" icon="PackageSearch" subtitle="Закупки и резервирование материалов" />} />
-          <Route path="/warehouse" element={<Placeholder title="Склад" icon="Warehouse" subtitle="Остатки и интеграция с 1С" />} />
-          <Route path="/production" element={<Placeholder title="Производство" icon="Factory" subtitle="Этапы, сроки, фотоотчёты" />} />
-          <Route path="/logistics" element={<Placeholder title="Логистика" icon="Truck" subtitle="График отгрузок и доставка" />} />
-          <Route path="/installation" element={<Placeholder title="Монтаж" icon="Wrench" subtitle="Бригады, акты, фото до/после" />} />
-          <Route path="/marketing" element={<Placeholder title="Маркетинг" icon="Megaphone" subtitle="Каналы, бюджет, план" />} />
-          <Route path="/finance" element={<Placeholder title="Финансы и себестоимость" icon="CircleDollarSign" subtitle="Маржа и план/факт" />} />
-          <Route path="/staff" element={<Placeholder title="Сотрудники" icon="UserCog" subtitle="Команда и роли" />} />
-          <Route path="/settings" element={<Placeholder title="Настройки" icon="Settings" subtitle="Параметры системы" />} />
+          <Route path="/orders" element={<Orders />} />
+          <Route path="/technology" element={<Technology />} />
+          <Route path="/supply" element={<Supply />} />
+          <Route path="/warehouse" element={<Warehouse />} />
+          <Route path="/production" element={<Production />} />
+          <Route path="/logistics" element={<Logistics />} />
+          <Route path="/installation" element={<Installation />} />
+          <Route path="/planner" element={<Planner />} />
+          <Route path="/marketing" element={<Marketing />} />
+          <Route path="/finance" element={<Finance />} />
+          <Route path="/reports" element={<Reports />} />
+          <Route path="/staff" element={<Staff />} />
+          <Route path="/settings" element={<Settings />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

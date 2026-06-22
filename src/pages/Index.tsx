@@ -34,25 +34,25 @@ const production = [
 ];
 
 const shipments = [
-  { date: '23 мая', order: 'Заказ №1256', name: 'Иванов И.И.', status: 'Подтверждено', tone: 'ok' },
-  { date: '24 мая', order: 'Заказ №1257', name: 'Петрова А.С.', status: 'Подтверждено', tone: 'ok' },
-  { date: '25 мая', order: 'Заказ №1258', name: 'Сидоров М.В.', status: 'В пути', tone: 'warn' },
-  { date: '27 мая', order: 'Заказ №1259', name: 'Кузнецова О.П.', status: 'Запланировано', tone: 'muted' },
+  { date: '23 июн', order: 'Заказ №1256', name: 'Смирнов А.С.', status: 'Подтверждено', tone: 'ok' },
+  { date: '24 июн', order: 'Заказ №1257', name: 'Петрова Е.В.', status: 'Подтверждено', tone: 'ok' },
+  { date: '25 июн', order: 'Заказ №1258', name: 'Фролов М.В.', status: 'В пути', tone: 'warn' },
+  { date: '27 июн', order: 'Заказ №1259', name: 'Кузнецова О.П.', status: 'Запланировано', tone: 'muted' },
 ];
 
 const planner = [
-  { time: '10:00', task: 'Замер — г. Москва, ЖК Лесной', who: 'Иванов И.' },
-  { time: '12:00', task: 'Контрольный замер — ЖК Парк', who: 'Петров А.' },
+  { time: '10:00', task: 'Замер — Симферополь, ЖК «Парковый»', who: 'Иванов И.' },
+  { time: '12:00', task: 'Контрольный замер — ЖК «Крымская Ривьера»', who: 'Петров А.' },
   { time: '14:00', task: 'Подготовить КП — заказ №1260', who: 'Смирнова Е.' },
   { time: '16:00', task: 'Согласование материалов', who: 'Кузнецов Д.' },
   { time: '17:30', task: 'Отгрузка — заказ №1256', who: 'Логистика' },
 ];
 
 const finance = [
-  { label: 'Выручка', value: '9 850 000 ₽', delta: '+12% к апрелю', good: true },
-  { label: 'Себестоимость', value: '6 820 000 ₽', delta: '+8% к апрелю', good: true },
-  { label: 'Валовая прибыль', value: '3 030 000 ₽', delta: '+18% к апрелю', good: true },
-  { label: 'Маржинальность', value: '30.8%', delta: '+1.6% к апрелю', good: true },
+  { label: 'Выручка', value: '9 850 000 ₽', delta: '+12% к маю', good: true },
+  { label: 'Себестоимость', value: '6 820 000 ₽', delta: '+8% к маю', good: true },
+  { label: 'Валовая прибыль', value: '3 030 000 ₽', delta: '+18% к маю', good: true },
+  { label: 'Маржинальность', value: '30.8%', delta: '+1.6% к маю', good: true },
 ];
 
 const toneColor: Record<string, string> = {

@@ -1,7 +1,5 @@
-import Sidebar from '@/components/Sidebar';
+import Layout from '@/components/Layout';
 import Icon from '@/components/ui/icon';
-
-const HERO_IMG = 'https://cdn.poehali.dev/projects/eef01eb5-7830-4400-a486-64829cb2d730/files/731403e6-0aba-4e1a-8599-1dee4329e054.jpg';
 
 const metrics = [
   { label: 'Новые лиды', value: '24', sub: '+12 за сегодня', icon: 'UserPlus', tone: 'ok' },
@@ -88,39 +86,18 @@ const SectionHead = ({ title, action }: { title: string; action?: string }) => (
 
 const Index = () => {
   return (
-    <div className="flex min-h-screen bg-background">
-      <Sidebar />
-
-      <main className="flex-1 min-w-0">
-        {/* Top bar */}
-        <header className="sticky top-0 z-20 flex items-center justify-between px-8 py-5 bg-background/80 backdrop-blur-xl border-b border-border">
-          <div>
-            <h1 className="font-display font-extrabold text-2xl text-foreground">Добро пожаловать, Александр!</h1>
-            <p className="text-sm text-muted-foreground mt-0.5">Главная панель управления бизнесом</p>
-          </div>
-          <div className="flex items-center gap-3">
-            <button className="flex items-center gap-2.5 px-4 py-2.5 rounded-xl glass-card hover:border-gold/30 transition-colors">
-              <div className="w-7 h-7 rounded-lg gold-gradient flex items-center justify-center text-background text-[11px] font-bold">ТМ</div>
-              <span className="text-sm font-semibold">Территория Мебели</span>
-              <Icon name="ChevronDown" size={16} className="text-muted-foreground" />
-            </button>
-            <button className="flex items-center gap-2 px-4 py-2.5 rounded-xl glass-card text-sm">
-              <Icon name="Calendar" size={16} className="text-gold" />
-              23 мая 2024
-            </button>
-            <button className="relative w-11 h-11 rounded-xl glass-card flex items-center justify-center hover:border-gold/30 transition-colors">
-              <Icon name="Bell" size={18} />
-              <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-status-crit text-white text-[10px] font-bold flex items-center justify-center">12</span>
-            </button>
-            <button className="flex items-center gap-2 px-5 py-2.5 rounded-xl gold-gradient text-background font-semibold text-sm hover:opacity-90 transition-opacity shadow-lg shadow-gold/20">
-              <Icon name="Plus" size={18} />
-              Быстрое действие
-            </button>
-          </div>
-        </header>
-
-        <div className="p-8 space-y-6">
-          {/* Metrics row */}
+    <Layout
+      title="Добро пожаловать, Александр!"
+      subtitle="Главная панель управления бизнесом"
+      actions={
+        <button className="flex items-center gap-2 px-4 py-2.5 rounded-xl gold-gradient text-background font-semibold text-sm hover:opacity-90 transition-opacity shadow-lg shadow-gold/20">
+          <Icon name="Plus" size={18} />
+          <span className="hidden lg:inline">Быстрое действие</span>
+        </button>
+      }
+    >
+      <div className="space-y-6">
+        {/* Metrics row */}
           <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-4">
             {metrics.map((m, i) => (
               <Card key={m.label} delay={i * 60}>
@@ -345,8 +322,7 @@ const Index = () => {
             </div>
           </Card>
         </div>
-      </main>
-    </div>
+    </Layout>
   );
 };
 

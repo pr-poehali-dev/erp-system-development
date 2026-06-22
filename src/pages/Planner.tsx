@@ -2,6 +2,7 @@ import { useState } from 'react';
 import Layout from '@/components/Layout';
 import Icon from '@/components/ui/icon';
 import Modal from '@/components/Modal';
+import { useToast } from '@/hooks/useToast';
 
 const tabs = ['День', 'Неделя', 'Месяц', 'Список', 'Канбан', 'Мои задачи'];
 const days = [
@@ -85,6 +86,7 @@ const prioBg: Record<string, string> = {
 };
 
 const Planner = () => {
+  const { success } = useToast();
   const [active, setActive] = useState('Неделя');
   const [showNewTask, setShowNewTask] = useState(false);
 
@@ -293,7 +295,7 @@ const Planner = () => {
         size="md"
         footer={
           <div className="flex gap-3">
-            <button onClick={() => setShowNewTask(false)} className="flex-1 py-3 rounded-xl gold-gradient btn-gold text-background font-semibold text-sm shadow-lg shadow-gold/20">
+            <button onClick={() => { setShowNewTask(false); success('Задача создана', 'Добавлена в планер и назначена ответственному'); }} className="flex-1 py-3 rounded-xl gold-gradient btn-gold text-background font-semibold text-sm shadow-lg shadow-gold/20">
               Создать задачу
             </button>
             <button onClick={() => setShowNewTask(false)} className="px-5 py-3 rounded-xl bg-secondary border border-border text-sm hover:border-gold/30 transition-colors">

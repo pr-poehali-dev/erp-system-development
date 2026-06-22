@@ -1,9 +1,9 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { ToastProvider } from "@/hooks/useToast";
 import Index from "./pages/Index";
 import CompanySelect from "./pages/CompanySelect";
 import Planner from "./pages/Planner";
@@ -31,34 +31,35 @@ const queryClient = new QueryClient();
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<CompanySelect />} />
-          <Route path="/dashboard" element={<Index />} />
-          <Route path="/crm" element={<CRM />} />
-          <Route path="/clients" element={<Clients />} />
-          <Route path="/measurements" element={<Measurements />} />
-          <Route path="/control-measurements" element={<ControlMeasurements />} />
-          <Route path="/proposals" element={<Proposals />} />
-          <Route path="/orders" element={<Orders />} />
-          <Route path="/technology" element={<Technology />} />
-          <Route path="/supply" element={<Supply />} />
-          <Route path="/warehouse" element={<Warehouse />} />
-          <Route path="/production" element={<Production />} />
-          <Route path="/logistics" element={<Logistics />} />
-          <Route path="/installation" element={<Installation />} />
-          <Route path="/planner" element={<Planner />} />
-          <Route path="/marketing" element={<Marketing />} />
-          <Route path="/finance" element={<Finance />} />
-          <Route path="/reports" element={<Reports />} />
-          <Route path="/staff" element={<Staff />} />
-          <Route path="/settings" element={<Settings />} />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </BrowserRouter>
+      <ToastProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <Routes>
+            <Route path="/" element={<CompanySelect />} />
+            <Route path="/dashboard" element={<Index />} />
+            <Route path="/crm" element={<CRM />} />
+            <Route path="/clients" element={<Clients />} />
+            <Route path="/measurements" element={<Measurements />} />
+            <Route path="/control-measurements" element={<ControlMeasurements />} />
+            <Route path="/proposals" element={<Proposals />} />
+            <Route path="/orders" element={<Orders />} />
+            <Route path="/technology" element={<Technology />} />
+            <Route path="/supply" element={<Supply />} />
+            <Route path="/warehouse" element={<Warehouse />} />
+            <Route path="/production" element={<Production />} />
+            <Route path="/logistics" element={<Logistics />} />
+            <Route path="/installation" element={<Installation />} />
+            <Route path="/planner" element={<Planner />} />
+            <Route path="/marketing" element={<Marketing />} />
+            <Route path="/finance" element={<Finance />} />
+            <Route path="/reports" element={<Reports />} />
+            <Route path="/staff" element={<Staff />} />
+            <Route path="/settings" element={<Settings />} />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </BrowserRouter>
+      </ToastProvider>
     </TooltipProvider>
   </QueryClientProvider>
 );

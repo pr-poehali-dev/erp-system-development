@@ -2,6 +2,7 @@ import { useState } from 'react';
 import Layout from '@/components/Layout';
 import Icon from '@/components/ui/icon';
 import Modal from '@/components/Modal';
+import { useToast } from '@/hooks/useToast';
 
 const orders = [
   { id: '№1258', client: 'Мария Петрова', obj: 'Квартира, ЖК «Парковый», Симферополь', type: 'Кухня и остров', sum: '1 245 000 ₽', status: 'В производстве', statusTone: 'ok', mgr: 'Иванова А.С.', deadline: '21.07.2026', pct: 65, company: 'ТМ' },
@@ -34,6 +35,7 @@ const stages = [
 ];
 
 const Orders = () => {
+  const { success, info } = useToast();
   const [sel, setSel] = useState('№1258');
   const selOrder = orders.find((o) => o.id === sel)!;
   const [showNew, setShowNew] = useState(false);
@@ -191,7 +193,7 @@ const Orders = () => {
         size="md"
         footer={
           <div className="flex gap-3">
-            <button onClick={() => setShowNew(false)} className="flex-1 py-3 rounded-xl gold-gradient btn-gold text-background font-semibold text-sm shadow-lg shadow-gold/20">
+            <button onClick={() => { setShowNew(false); success('Заказ создан', 'Запущен в производство'); }} className="flex-1 py-3 rounded-xl gold-gradient btn-gold text-background font-semibold text-sm shadow-lg shadow-gold/20">
               Создать заказ
             </button>
             <button onClick={() => setShowNew(false)} className="px-5 py-3 rounded-xl bg-secondary border border-border text-sm hover:border-gold/30 transition-colors">
@@ -265,7 +267,7 @@ const Orders = () => {
         size="sm"
         badge={{ label: selOrder.status, tone: selOrder.statusTone as 'ok'|'warn'|'crit'|'info'|'gold'|'muted' }}
         footer={
-          <button onClick={() => setShowComment(false)} className="w-full py-3 rounded-xl gold-gradient btn-gold text-background font-semibold text-sm">
+          <button onClick={() => { setShowComment(false); info('Комментарий сохранён'); }} className="w-full py-3 rounded-xl gold-gradient btn-gold text-background font-semibold text-sm">
             Сохранить комментарий
           </button>
         }

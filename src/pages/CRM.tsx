@@ -2,6 +2,7 @@ import { useState } from 'react';
 import Layout from '@/components/Layout';
 import Icon from '@/components/ui/icon';
 import Modal from '@/components/Modal';
+import { useToast } from '@/hooks/useToast';
 
 const tabs = ['Канбан', 'Список', 'Мои сделки', 'Аналитика'];
 
@@ -116,6 +117,7 @@ const DealCard = ({ deal, onClick, isSelected }: { deal: Deal; onClick: () => vo
 );
 
 const CRM = () => {
+  const { success, info } = useToast();
   const [activeTab, setActiveTab] = useState('Канбан');
   const [selectedDeal, setSelectedDeal] = useState<string | null>('d7');
   const [showDetail, setShowDetail] = useState(true);
@@ -305,7 +307,7 @@ const CRM = () => {
         size="md"
         footer={
           <div className="flex gap-3">
-            <button onClick={() => setShowNewDeal(false)} className="flex-1 py-3 rounded-xl gold-gradient btn-gold text-background font-semibold text-sm shadow-lg shadow-gold/20">
+            <button onClick={() => { setShowNewDeal(false); success('Сделка создана', 'Лид добавлен в воронку продаж'); }} className="flex-1 py-3 rounded-xl gold-gradient btn-gold text-background font-semibold text-sm shadow-lg shadow-gold/20">
               Создать сделку
             </button>
             <button onClick={() => setShowNewDeal(false)} className="px-5 py-3 rounded-xl bg-secondary border border-border text-sm hover:border-gold/30 transition-colors">
@@ -378,7 +380,7 @@ const CRM = () => {
         size="sm"
         footer={
           <div className="flex gap-3">
-            <button onClick={() => setShowFilter(false)} className="flex-1 py-3 rounded-xl gold-gradient text-background font-semibold text-sm">Применить</button>
+            <button onClick={() => { setShowFilter(false); info('Фильтры применены'); }} className="flex-1 py-3 rounded-xl gold-gradient text-background font-semibold text-sm">Применить</button>
             <button onClick={() => setShowFilter(false)} className="px-5 py-3 rounded-xl bg-secondary border border-border text-sm hover:border-gold/30 transition-colors">Сбросить</button>
           </div>
         }

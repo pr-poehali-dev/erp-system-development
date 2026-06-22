@@ -2,6 +2,7 @@ import { useState } from 'react';
 import Layout from '@/components/Layout';
 import Icon from '@/components/ui/icon';
 import Modal from '@/components/Modal';
+import { useToast } from '@/hooks/useToast';
 
 const HERO_IMG = 'https://cdn.poehali.dev/projects/eef01eb5-7830-4400-a486-64829cb2d730/files/731403e6-0aba-4e1a-8599-1dee4329e054.jpg';
 
@@ -45,6 +46,7 @@ const statusBg: Record<string, string> = {
 };
 
 const Proposals = () => {
+  const { success, info } = useToast();
   const [active, setActive] = useState('Все КП');
   const [selected, setSelected] = useState('КП-1258');
   const sel = proposals.find((p) => p.id === selected)!;
@@ -264,7 +266,7 @@ const Proposals = () => {
         size="lg"
         footer={
           <div className="flex gap-3">
-            <button onClick={() => setShowCreate(false)} className="flex-1 py-3 rounded-xl gold-gradient btn-gold text-background font-semibold text-sm shadow-lg shadow-gold/20">
+            <button onClick={() => { setShowCreate(false); success('КП создано', 'Добавлено в черновики'); }} className="flex-1 py-3 rounded-xl gold-gradient btn-gold text-background font-semibold text-sm shadow-lg shadow-gold/20">
               Создать КП
             </button>
             <button onClick={() => setShowCreate(false)} className="px-5 py-3 rounded-xl bg-secondary border border-border text-sm hover:border-gold/30 transition-colors">
@@ -354,7 +356,7 @@ const Proposals = () => {
         badge={{ label: sel.status, tone: sel.tone as 'ok' | 'warn' | 'crit' | 'info' | 'gold' | 'muted' }}
         footer={
           <div className="flex gap-3">
-            <button onClick={() => setShowSend(false)} className="flex-1 py-3 rounded-xl gold-gradient btn-gold text-background font-semibold text-sm shadow-gold/20 shadow-lg flex items-center justify-center gap-2">
+            <button onClick={() => { setShowSend(false); success('КП отправлено клиенту'); }} className="flex-1 py-3 rounded-xl gold-gradient btn-gold text-background font-semibold text-sm shadow-gold/20 shadow-lg flex items-center justify-center gap-2">
               <Icon name="Send" size={15} /> Отправить
             </button>
             <button onClick={() => setShowSend(false)} className="px-5 py-3 rounded-xl bg-secondary border border-border text-sm hover:border-gold/30 transition-colors">
@@ -403,7 +405,7 @@ const Proposals = () => {
         icon="FileDown"
         size="sm"
         footer={
-          <button onClick={() => setShowPDF(false)} className="w-full py-3 rounded-xl gold-gradient btn-gold text-background font-semibold text-sm shadow-lg shadow-gold/20 flex items-center justify-center gap-2">
+          <button onClick={() => { setShowPDF(false); info('Файл подготовлен', 'Загрузка началась'); }} className="w-full py-3 rounded-xl gold-gradient btn-gold text-background font-semibold text-sm shadow-lg shadow-gold/20 flex items-center justify-center gap-2">
             <Icon name="Download" size={16} /> Скачать {sel.id}.pdf
           </button>
         }

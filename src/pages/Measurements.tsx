@@ -2,6 +2,7 @@ import { useState } from 'react';
 import Layout from '@/components/Layout';
 import Icon from '@/components/ui/icon';
 import Modal from '@/components/Modal';
+import { useToast } from '@/hooks/useToast';
 
 const tabs = ['Все замеры', 'Первичные', 'Контрольные', 'Назначенные', 'Выполненные', 'Перенесенные', 'Отмененные'];
 
@@ -53,6 +54,7 @@ const calDates = [
 const hasMeas = [23, 24, 25, 26, 27];
 
 const Measurements = () => {
+  const { success } = useToast();
   const [activeTab, setActiveTab] = useState('Все замеры');
   const [selected, setSelected] = useState('Z-1258');
   const sel = measurements.find((m) => m.id === selected) || detailMeas;
@@ -347,7 +349,7 @@ const Measurements = () => {
         size="md"
         footer={
           <div className="flex gap-3">
-            <button onClick={() => setShowNew(false)} className="flex-1 py-3 rounded-xl gold-gradient btn-gold text-background font-semibold text-sm shadow-lg shadow-gold/20">
+            <button onClick={() => { setShowNew(false); success('Замер назначен', 'Менеджер получил уведомление'); }} className="flex-1 py-3 rounded-xl gold-gradient btn-gold text-background font-semibold text-sm shadow-lg shadow-gold/20">
               Назначить замер
             </button>
             <button onClick={() => setShowNew(false)} className="px-5 py-3 rounded-xl bg-secondary border border-border text-sm hover:border-gold/30 transition-colors">

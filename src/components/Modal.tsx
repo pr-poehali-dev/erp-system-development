@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import Icon from '@/components/ui/icon';
+import { useToast } from '@/hooks/useToast';
 
 interface ModalProps {
   open: boolean;
@@ -129,49 +130,51 @@ interface QuickCreateModalProps {
 }
 
 export const QuickCreateModal = ({ open, onClose }: QuickCreateModalProps) => {
+  const { success } = useToast();
+
   const actions = [
-    { icon: 'UserPlus', label: 'Новая сделка', sub: 'CRM / воронка продаж', tone: 'info' as const },
-    { icon: 'Ruler', label: 'Назначить замер', sub: 'Первичный или контрольный', tone: 'ok' as const },
-    { icon: 'FileText', label: 'Создать КП', sub: 'Коммерческое предложение', tone: 'gold' as const },
-    { icon: 'ClipboardList', label: 'Новый заказ', sub: 'Запустить в производство', tone: 'warn' as const },
-    { icon: 'CalendarCheck', label: 'Новая задача', sub: 'В планер и задачи', tone: 'ok' as const },
-    { icon: 'Wrench', label: 'Назначить монтаж', sub: 'Бригада и дата', tone: 'crit' as const },
-    { icon: 'Contact', label: 'Новый клиент', sub: 'Добавить в базу', tone: 'info' as const },
-    { icon: 'PackageSearch', label: 'Заявка снабжению', sub: 'Материалы и комплектующие', tone: 'muted' as const },
+    { icon: 'UserPlus', label: 'Новая сделка', sub: 'CRM / воронка продаж', tone: 'info' as const, toast: 'Сделка создана' },
+    { icon: 'Ruler', label: 'Назначить замер', sub: 'Первичный или контрольный', tone: 'ok' as const, toast: 'Замер назначен' },
+    { icon: 'FileText', label: 'Создать КП', sub: 'Коммерческое предложение', tone: 'gold' as const, toast: 'КП создано' },
+    { icon: 'ClipboardList', label: 'Новый заказ', sub: 'Запустить в производство', tone: 'warn' as const, toast: 'Заказ создан' },
+    { icon: 'CalendarCheck', label: 'Новая задача', sub: 'В планер и задачи', tone: 'ok' as const, toast: 'Задача создана' },
+    { icon: 'Wrench', label: 'Назначить монтаж', sub: 'Бригада и дата', tone: 'crit' as const, toast: 'Монтаж назначен' },
+    { icon: 'Contact', label: 'Новый клиент', sub: 'Добавить в базу', tone: 'info' as const, toast: 'Клиент добавлен' },
+    { icon: 'PackageSearch', label: 'Заявка снабжению', sub: 'Материалы и комплектующие', tone: 'muted' as const, toast: 'Заявка создана' },
   ];
 
-  const toneGrad: Record<string, string> = {
-    ok: 'from-status-ok/10 to-transparent border-status-ok/20 hover:border-status-ok/40',
-    warn: 'from-status-warn/10 to-transparent border-status-warn/20 hover:border-status-warn/40',
-    crit: 'from-status-crit/10 to-transparent border-status-crit/20 hover:border-status-crit/40',
-    info: 'from-[hsl(199_60%_50%)]/10 to-transparent border-[hsl(199_60%_50%)]/20 hover:border-[hsl(199_60%_50%)]/40',
-    gold: 'from-gold/10 to-transparent border-gold/20 hover:border-gold/40',
-    muted: 'from-muted/50 to-transparent border-border hover:border-gold/30',
+  const toneBorder: Record<string, string> = {
+    ok:   'border-[hsl(142,55%,40%)]/25 hover:border-[hsl(142,55%,48%)]/60 hover:bg-[hsl(142,55%,48%)]/5',
+    warn: 'border-[hsl(38,90%,45%)]/25 hover:border-[hsl(38,90%,56%)]/60 hover:bg-[hsl(38,90%,56%)]/5',
+    crit: 'border-[hsl(4,80%,50%)]/25 hover:border-[hsl(4,80%,60%)]/60 hover:bg-[hsl(4,80%,60%)]/5',
+    info: 'border-[hsl(210,75%,50%)]/25 hover:border-[hsl(210,75%,55%)]/60 hover:bg-[hsl(210,75%,55%)]/5',
+    gold: 'border-gold/25 hover:border-gold/60 hover:bg-gold/5',
+    muted: 'border-border hover:border-gold/30 hover:bg-[hsl(220,20%,16%)]',
   };
-  const toneIcon: Record<string, string> = {
-    ok: 'text-status-ok', warn: 'text-status-warn', crit: 'text-status-crit',
-    info: 'text-[hsl(199_60%_60%)]', gold: 'text-gold', muted: 'text-muted-foreground',
+  const toneIconCl: Record<string, string> = {
+    ok:   'text-[hsl(142,55%,58%)] bg-[hsl(142,55%,48%)]/12',
+    warn: 'text-[hsl(38,90%,65%)] bg-[hsl(38,90%,56%)]/12',
+    crit: 'text-[hsl(4,80%,68%)] bg-[hsl(4,80%,60%)]/12',
+    info: 'text-[hsl(210,75%,68%)] bg-[hsl(210,75%,55%)]/12',
+    gold: 'text-gold bg-gold/12',
+    muted: 'text-[hsl(215,14%,55%)] bg-[hsl(220,18%,20%)]',
   };
 
   return (
-    <Modal open={open} onClose={onClose} title="Быстрое создание" subtitle="Выберите действие для быстрого старта" icon="Zap" size="lg">
+    <Modal open={open} onClose={onClose} title="Быстрое создание" subtitle="Выберите действие" icon="Zap" size="lg">
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pb-2">
         {actions.map((a, i) => (
           <button
             key={a.label}
-            onClick={onClose}
-            className={`flex flex-col items-center text-center p-4 rounded-xl bg-gradient-to-b border card-hover animate-slide-bottom opacity-0 ${toneGrad[a.tone]}`}
-            style={{ animationDelay: `${i * 45}ms` }}
+            onClick={() => { onClose(); success(a.toast, a.sub); }}
+            className={`flex flex-col items-center text-center p-4 rounded-xl bg-[hsl(220,22%,14%)] border transition-all duration-200 ${toneBorder[a.tone]}`}
+            style={{ animation: `fade-in 0.4s ease-out ${i * 40}ms both` }}
           >
-            <div className={`w-10 h-10 rounded-xl bg-current/10 flex items-center justify-center mb-3 ${toneIcon[a.tone]}`} style={{ background: 'currentColor', opacity: 0.12 }}>
-              <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${toneIcon[a.tone]}`} style={{ position: 'absolute' }}>
-              </div>
-            </div>
-            <div className={`w-12 h-12 rounded-2xl flex items-center justify-center mb-3 -mt-12 ${toneIcon[a.tone]} bg-current/[0.08]`}>
+            <div className={`w-11 h-11 rounded-2xl flex items-center justify-center mb-3 ${toneIconCl[a.tone]}`}>
               <Icon name={a.icon} size={22} />
             </div>
-            <div className="font-semibold text-[13px] text-foreground mb-1">{a.label}</div>
-            <div className="text-[11px] text-muted-foreground">{a.sub}</div>
+            <div className="font-semibold text-[13px] text-[hsl(210,20%,92%)] mb-0.5 leading-snug">{a.label}</div>
+            <div className="text-[11px] text-[hsl(215,14%,52%)] leading-snug">{a.sub}</div>
           </button>
         ))}
       </div>

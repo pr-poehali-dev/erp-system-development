@@ -16,6 +16,7 @@ const Layout = ({ title, subtitle, titleIcon, actions, children }: LayoutProps) 
   const navigate = useNavigate();
   const [showQuick, setShowQuick] = useState(false);
   const [showNotifs, setShowNotifs] = useState(false);
+  const [mobileSidebar, setMobileSidebar] = useState(false);
 
   const today = new Date();
   const end = new Date(today);
@@ -26,82 +27,101 @@ const Layout = ({ title, subtitle, titleIcon, actions, children }: LayoutProps) 
 
   return (
     <div className="flex min-h-screen bg-background">
-      <Sidebar />
-      <main className="flex-1 min-w-0">
-        {/* Topbar */}
-        <header className="sticky top-0 z-20 flex items-center justify-between px-8 py-4 bg-background/85 backdrop-blur-xl border-b border-border gap-4">
-          {/* Subtle top accent line */}
-          <div className="absolute top-0 left-0 right-0 h-px gold-gradient opacity-20 pointer-events-none" />
+      <Sidebar mobileOpen={mobileSidebar} onMobileClose={() => setMobileSidebar(false)} />
 
-          <div className="flex items-center gap-3 min-w-0">
+      <main className="flex-1 min-w-0 flex flex-col overflow-x-hidden">
+        {/* ── Topbar ── */}
+        <header className="sticky top-0 z-20 flex items-center justify-between px-4 md:px-6 lg:px-8 py-3 bg-[hsl(222,28%,9%)]/90 backdrop-blur-xl border-b border-[hsl(220,18%,20%)] gap-2">
+          <div className="flex items-center gap-2.5 min-w-0 flex-1">
+            {/* Hamburger mobile */}
+            <button
+              onClick={() => setMobileSidebar(true)}
+              className="lg:hidden w-9 h-9 rounded-xl glass-card flex items-center justify-center shrink-0 hover:border-gold/30 transition-all"
+              aria-label="Открыть меню"
+            >
+              <Icon name="Menu" size={17} />
+            </button>
+
             {titleIcon && (
-              <div className="w-10 h-10 rounded-xl bg-gold/10 border border-gold/20 flex items-center justify-center shrink-0">
-                <Icon name={titleIcon} size={20} className="text-gold" />
+              <div className="hidden sm:flex w-9 h-9 rounded-xl bg-gold/10 border border-gold/20 items-center justify-center shrink-0">
+                <Icon name={titleIcon} size={18} className="text-gold" />
               </div>
             )}
             <div className="min-w-0">
-              <h1 className="font-display font-extrabold text-xl text-foreground truncate">{title}</h1>
-              {subtitle && <p className="text-xs text-muted-foreground mt-0.5 truncate">{subtitle}</p>}
+              <h1 className="font-display font-extrabold text-[15px] sm:text-[17px] md:text-xl text-[hsl(210,20%,92%)] truncate leading-tight">{title}</h1>
+              {subtitle && <p className="text-[11px] text-[hsl(215,14%,52%)] mt-0.5 truncate hidden sm:block">{subtitle}</p>}
             </div>
           </div>
 
-          <div className="flex items-center gap-2 shrink-0">
-            {actions}
+          {/* Right controls */}
+          <div className="flex items-center gap-1.5 shrink-0">
+            {/* Page actions — sm+ only */}
+            <div className="hidden sm:flex items-center gap-1.5">{actions}</div>
 
-            {/* Company switcher */}
+            {/* Company switcher — md+ */}
             <button
               onClick={() => navigate('/')}
-              className="flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl glass-card hover:border-gold/30 transition-all duration-200 group"
+              className="hidden md:flex items-center gap-2 px-3 py-2 rounded-xl glass-card hover:border-gold/30 transition-all group max-w-[190px]"
             >
-              <div className="w-6 h-6 rounded-lg gold-gradient flex items-center justify-center text-background text-[10px] font-black shadow-sm">ТМ</div>
-              <span className="text-sm font-semibold hidden lg:inline group-hover:text-gold transition-colors">Территория Мебели</span>
-              <Icon name="ChevronDown" size={14} className="text-muted-foreground" />
+              <div className="w-5 h-5 rounded-md gold-gradient flex items-center justify-center text-[hsl(222,30%,8%)] text-[9px] font-black shrink-0">ТМ</div>
+              <span className="text-[12px] font-semibold hidden lg:inline group-hover:text-gold transition-colors truncate">Территория Мебели</span>
+              <Icon name="ChevronDown" size={12} className="text-[hsl(215,14%,52%)] shrink-0 hidden lg:block" />
             </button>
 
-            {/* Date */}
-            <button className="flex items-center gap-2 px-3.5 py-2.5 rounded-xl glass-card text-sm hidden xl:flex hover:border-gold/30 transition-all">
-              <Icon name="Calendar" size={14} className="text-gold" />
-              <span className="text-muted-foreground">{dateRange}</span>
+            {/* Date — xl+ */}
+            <button className="hidden xl:flex items-center gap-1.5 px-3 py-2 rounded-xl glass-card hover:border-gold/30 transition-all">
+              <Icon name="Calendar" size={13} className="text-gold" />
+              <span className="text-[12px] text-[hsl(215,14%,52%)] whitespace-nowrap">{dateRange}</span>
             </button>
 
             {/* Notifications */}
             <button
               onClick={() => setShowNotifs(true)}
-              className="relative w-10 h-10 rounded-xl glass-card flex items-center justify-center hover:border-gold/30 transition-all duration-200 group"
+              className="relative w-9 h-9 rounded-xl glass-card flex items-center justify-center hover:border-gold/30 transition-all group"
             >
-              <Icon name="Bell" size={17} className="group-hover:text-gold transition-colors" />
-              <span className="absolute -top-1.5 -right-1.5 min-w-[20px] h-5 px-1 rounded-full bg-status-crit text-white text-[10px] font-bold flex items-center justify-center border-2 border-background">3</span>
+              <Icon name="Bell" size={16} className="group-hover:text-gold transition-colors" />
+              <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-0.5 rounded-full bg-[hsl(4,80%,60%)] text-white text-[9px] font-bold flex items-center justify-center border-2 border-[hsl(222,28%,9%)]">3</span>
             </button>
 
-            {/* Help */}
-            <button className="w-10 h-10 rounded-xl glass-card flex items-center justify-center hover:border-gold/30 transition-all hidden xl:flex group">
-              <Icon name="HelpCircle" size={17} className="group-hover:text-gold transition-colors" />
+            {/* Help — lg+ */}
+            <button className="hidden lg:flex w-9 h-9 rounded-xl glass-card items-center justify-center hover:border-gold/30 transition-all group">
+              <Icon name="HelpCircle" size={16} className="group-hover:text-gold transition-colors" />
             </button>
 
             {/* Quick create */}
             <button
               onClick={() => setShowQuick(true)}
-              className="flex items-center gap-2 px-4 py-2.5 rounded-xl gold-gradient btn-gold text-background font-semibold text-sm shadow-lg shadow-gold/20"
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl gold-gradient btn-gold text-[hsl(222,30%,8%)] font-bold text-[13px] shadow-md shadow-gold/20"
             >
-              <Icon name="Plus" size={17} />
-              <span className="hidden lg:inline">Создать</span>
+              <Icon name="Plus" size={15} />
+              <span className="hidden sm:inline">Создать</span>
             </button>
 
-            {/* User avatar */}
-            <div className="flex items-center gap-2.5 pl-3 border-l border-border">
-              <div className="relative">
-                <div className="w-9 h-9 rounded-full gold-gradient flex items-center justify-center text-background font-bold text-sm">А</div>
-                <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-status-ok border-2 border-background" />
+            {/* User */}
+            <div className="flex items-center gap-2 pl-2 border-l border-[hsl(220,18%,20%)]">
+              <div className="relative shrink-0">
+                <div className="w-8 h-8 rounded-full gold-gradient flex items-center justify-center text-[hsl(222,30%,8%)] font-bold text-sm">А</div>
+                <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-[hsl(142,55%,48%)] border-2 border-[hsl(222,28%,9%)]" />
               </div>
               <div className="hidden xl:block">
-                <div className="text-sm font-semibold leading-tight text-foreground">Александр</div>
-                <div className="text-[11px] text-muted-foreground">Собственник</div>
+                <div className="text-[13px] font-semibold leading-tight text-[hsl(210,20%,92%)]">Александр</div>
+                <div className="text-[10px] text-[hsl(215,14%,52%)]">Собственник</div>
               </div>
             </div>
           </div>
         </header>
 
-        <div className="p-8">{children}</div>
+        {/* Mobile actions bar */}
+        {actions && (
+          <div className="sm:hidden flex items-center gap-2 px-4 py-2 border-b border-[hsl(220,18%,20%)] bg-[hsl(222,28%,9%)]/80 overflow-x-auto scrollbar-thin shrink-0">
+            {actions}
+          </div>
+        )}
+
+        {/* Page content */}
+        <div className="flex-1 p-4 md:p-6 lg:p-8 overflow-x-hidden">
+          {children}
+        </div>
       </main>
 
       <QuickCreateModal open={showQuick} onClose={() => setShowQuick(false)} />

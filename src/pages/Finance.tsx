@@ -2,6 +2,7 @@ import { useState } from 'react';
 import Layout from '@/components/Layout';
 import Icon from '@/components/ui/icon';
 import Modal from '@/components/Modal';
+import { useToast } from '@/hooks/useToast';
 
 const periods = ['Июнь 2026', 'Май 2026', 'Q2 2026', 'Год'];
 
@@ -28,6 +29,7 @@ const margins = [
 const toneTxt: Record<string, string> = { ok: 'text-status-ok', warn: 'text-status-warn', crit: 'text-status-crit', foreground: 'text-foreground' };
 
 const Finance = () => {
+  const { success, info } = useToast();
   const [period, setPeriod] = useState('Июнь 2026');
   const [showPayment, setShowPayment] = useState(false);
   const [showExport, setShowExport] = useState(false);
@@ -132,7 +134,7 @@ const Finance = () => {
         size="sm"
         footer={
           <div className="flex gap-3">
-            <button onClick={() => setShowPayment(false)} className="flex-1 py-3 rounded-xl gold-gradient btn-gold text-background font-semibold text-sm shadow-lg shadow-gold/20">
+            <button onClick={() => { setShowPayment(false); success('Платёж зафиксирован', 'Добавлен в ДДС'); }} className="flex-1 py-3 rounded-xl gold-gradient btn-gold text-background font-semibold text-sm shadow-lg shadow-gold/20">
               Сохранить
             </button>
             <button onClick={() => setShowPayment(false)} className="px-5 py-3 rounded-xl bg-secondary border border-border text-sm hover:border-gold/30 transition-colors">
@@ -199,7 +201,7 @@ const Finance = () => {
         icon="Download"
         size="sm"
         footer={
-          <button onClick={() => setShowExport(false)} className="w-full py-3 rounded-xl gold-gradient btn-gold text-background font-semibold text-sm shadow-lg shadow-gold/20 flex items-center justify-center gap-2">
+          <button onClick={() => { setShowExport(false); info('Отчёт подготовлен', 'Загрузка началась'); }} className="w-full py-3 rounded-xl gold-gradient btn-gold text-background font-semibold text-sm shadow-lg shadow-gold/20 flex items-center justify-center gap-2">
             <Icon name="Download" size={16} /> Скачать отчёт
           </button>
         }

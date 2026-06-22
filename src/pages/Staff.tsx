@@ -2,6 +2,7 @@ import { useState } from 'react';
 import Layout from '@/components/Layout';
 import Icon from '@/components/ui/icon';
 import Modal from '@/components/Modal';
+import { useToast } from '@/hooks/useToast';
 
 const staff = [
   { id: 's1', name: 'Иванова Анна Сергеевна', role: 'Менеджер продаж', dept: 'Продажи', phone: '+7 (978) 111-22-33', deals: 18, sum: '2 456 000 ₽', tasks: 12, load: 80, status: 'Активен', initials: 'ИА' },
@@ -16,6 +17,7 @@ const staff = [
 const statusBg: Record<string, string> = { 'Активен': 'bg-status-ok/15 text-status-ok', 'Отпуск': 'bg-status-warn/15 text-status-warn', 'Уволен': 'bg-status-crit/15 text-status-crit' };
 
 const Staff = () => {
+  const { success } = useToast();
   const [sel, setSel] = useState<string | null>('s1');
   const selS = staff.find((s) => s.id === sel);
   const [showAdd, setShowAdd] = useState(false);
@@ -119,7 +121,7 @@ const Staff = () => {
         size="md"
         footer={
           <div className="flex gap-3">
-            <button onClick={() => setShowAdd(false)} className="flex-1 py-3 rounded-xl gold-gradient btn-gold text-background font-semibold text-sm shadow-lg shadow-gold/20">
+            <button onClick={() => { setShowAdd(false); success('Сотрудник добавлен', 'Профиль создан, отправлено приглашение'); }} className="flex-1 py-3 rounded-xl gold-gradient btn-gold text-background font-semibold text-sm shadow-lg shadow-gold/20">
               Добавить сотрудника
             </button>
             <button onClick={() => setShowAdd(false)} className="px-5 py-3 rounded-xl bg-secondary border border-border text-sm hover:border-gold/30 transition-colors">

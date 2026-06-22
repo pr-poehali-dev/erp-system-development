@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import Layout from '@/components/Layout';
 import Icon from '@/components/ui/icon';
 import Modal from '@/components/Modal';
+import { useToast } from '@/hooks/useToast';
 
 const metrics = [
   { label: 'Новые лиды', value: '24', sub: '+12 за сегодня', icon: 'UserPlus', tone: 'ok', path: '/crm' },
@@ -128,6 +129,7 @@ const MetricModal = ({ metric, open, onClose }: { metric: typeof metrics[0] | nu
 
 const Index = () => {
   const navigate = useNavigate();
+  const { success } = useToast();
   const [metricModal, setMetricModal] = useState<typeof metrics[0] | null>(null);
   const [showLeadModal, setShowLeadModal] = useState(false);
 
@@ -437,7 +439,7 @@ const Index = () => {
         size="md"
         footer={
           <div className="flex gap-3">
-            <button onClick={() => setShowLeadModal(false)} className="flex-1 py-3 rounded-xl gold-gradient btn-gold text-background font-semibold text-sm shadow-lg shadow-gold/20">
+            <button onClick={() => { setShowLeadModal(false); success('Лид создан!', 'Новая сделка добавлена в воронку CRM'); }} className="flex-1 py-3 rounded-xl gold-gradient btn-gold text-background font-semibold text-sm shadow-lg shadow-gold/20">
               Создать сделку
             </button>
             <button onClick={() => setShowLeadModal(false)} className="px-5 py-3 rounded-xl bg-secondary border border-border text-sm hover:border-gold/30 transition-colors">

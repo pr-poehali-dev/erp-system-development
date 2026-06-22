@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import Layout from '@/components/Layout';
 import Icon from '@/components/ui/icon';
+import Modal from '@/components/Modal';
 
 const staff = [
   { id: 's1', name: 'Иванова Анна Сергеевна', role: 'Менеджер продаж', dept: 'Продажи', phone: '+7 (978) 111-22-33', deals: 18, sum: '2 456 000 ₽', tasks: 12, load: 80, status: 'Активен', initials: 'ИА' },
@@ -17,10 +18,11 @@ const statusBg: Record<string, string> = { 'Активен': 'bg-status-ok/15 te
 const Staff = () => {
   const [sel, setSel] = useState<string | null>('s1');
   const selS = staff.find((s) => s.id === sel);
+  const [showAdd, setShowAdd] = useState(false);
 
   return (
     <Layout title="Сотрудники" titleIcon="UserCog" actions={
-      <button className="flex items-center gap-2 px-4 py-2.5 rounded-xl gold-gradient text-background font-semibold text-sm hover:opacity-90">
+      <button onClick={() => setShowAdd(true)} className="flex items-center gap-2 px-4 py-2.5 rounded-xl gold-gradient btn-gold text-background font-semibold text-sm shadow-lg shadow-gold/20">
         <Icon name="Plus" size={17} /> Добавить сотрудника
       </button>
     }>
@@ -106,6 +108,88 @@ const Staff = () => {
           </div>
         )}
       </div>
+
+      {/* ── Добавить сотрудника modal ── */}
+      <Modal
+        open={showAdd}
+        onClose={() => setShowAdd(false)}
+        title="Добавить сотрудника"
+        subtitle="Новый член команды"
+        icon="UserCog"
+        size="md"
+        footer={
+          <div className="flex gap-3">
+            <button onClick={() => setShowAdd(false)} className="flex-1 py-3 rounded-xl gold-gradient btn-gold text-background font-semibold text-sm shadow-lg shadow-gold/20">
+              Добавить сотрудника
+            </button>
+            <button onClick={() => setShowAdd(false)} className="px-5 py-3 rounded-xl bg-secondary border border-border text-sm hover:border-gold/30 transition-colors">
+              Отмена
+            </button>
+          </div>
+        }
+      >
+        <div className="space-y-4 pb-2">
+          <div className="flex items-center justify-center py-4">
+            <div className="relative">
+              <div className="w-20 h-20 rounded-2xl gold-gradient flex items-center justify-center text-background font-display font-black text-3xl">
+                ?
+              </div>
+              <button className="absolute -bottom-2 -right-2 w-8 h-8 rounded-full gold-gradient flex items-center justify-center shadow-md border-2 border-background">
+                <Icon name="Camera" size={14} className="text-background" />
+              </button>
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            {[
+              { label: 'Имя', placeholder: 'Иванова', icon: 'User' },
+              { label: 'Фамилия', placeholder: 'Анна Сергеевна', icon: 'User' },
+            ].map((f) => (
+              <div key={f.label}>
+                <label className="text-[11px] text-muted-foreground mb-1.5 block font-medium">{f.label}</label>
+                <div className="flex items-center gap-3 px-3.5 py-3 rounded-xl bg-secondary border border-border focus-within:border-gold/50 transition-colors">
+                  <Icon name={f.icon} size={15} className="text-gold shrink-0" />
+                  <input placeholder={f.placeholder} className="bg-transparent text-sm outline-none flex-1 text-foreground placeholder:text-muted-foreground/50" />
+                </div>
+              </div>
+            ))}
+          </div>
+          {[
+            { label: 'Должность', placeholder: 'Менеджер продаж', icon: 'Briefcase' },
+            { label: 'Телефон', placeholder: '+7 (978) 000-00-00', icon: 'Phone' },
+            { label: 'Email', placeholder: 'ivanova@неостандарт.рф', icon: 'Mail' },
+          ].map((f) => (
+            <div key={f.label}>
+              <label className="text-[11px] text-muted-foreground mb-1.5 block font-medium">{f.label}</label>
+              <div className="flex items-center gap-3 px-3.5 py-3 rounded-xl bg-secondary border border-border focus-within:border-gold/50 transition-colors">
+                <Icon name={f.icon} size={15} className="text-gold shrink-0" />
+                <input placeholder={f.placeholder} className="bg-transparent text-sm outline-none flex-1 text-foreground placeholder:text-muted-foreground/50" />
+              </div>
+            </div>
+          ))}
+          <div>
+            <label className="text-[11px] text-muted-foreground mb-2 block font-medium">Отдел</label>
+            <div className="flex flex-wrap gap-2">
+              {['Продажи', 'Производство', 'Проектирование', 'Монтаж', 'Логистика', 'Снабжение'].map((d, i) => (
+                <button key={d} className={`px-3 py-1.5 rounded-xl text-[12px] border transition-all ${i === 0 ? 'gold-gradient text-background border-transparent font-semibold' : 'bg-secondary border-border text-muted-foreground hover:border-gold/30'}`}>{d}</button>
+              ))}
+            </div>
+          </div>
+          <div>
+            <label className="text-[11px] text-muted-foreground mb-2 block font-medium">Роль в системе</label>
+            <div className="grid grid-cols-3 gap-2">
+              {[
+                { l: 'Менеджер', i: 'Users' },
+                { l: 'Администратор', i: 'Shield' },
+                { l: 'Только просмотр', i: 'Eye' },
+              ].map((r, i) => (
+                <button key={r.l} className={`flex flex-col items-center gap-1.5 py-3 rounded-xl border text-[11px] transition-all ${i === 0 ? 'border-gold/40 bg-gold/8 text-gold' : 'border-border bg-secondary text-muted-foreground hover:border-gold/25'}`}>
+                  <Icon name={r.i} size={16} /> {r.l}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      </Modal>
     </Layout>
   );
 };

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import Layout from '@/components/Layout';
 import Icon from '@/components/ui/icon';
+import Modal from '@/components/Modal';
 
 const tabs = ['День', 'Неделя', 'Месяц', 'Список', 'Канбан', 'Мои задачи'];
 const days = [
@@ -85,6 +86,7 @@ const prioBg: Record<string, string> = {
 
 const Planner = () => {
   const [active, setActive] = useState('Неделя');
+  const [showNewTask, setShowNewTask] = useState(false);
 
   return (
     <Layout
@@ -92,7 +94,7 @@ const Planner = () => {
       titleIcon="CalendarCheck"
       actions={
         <>
-          <button className="flex items-center gap-2 px-4 py-2.5 rounded-xl gold-gradient text-background font-semibold text-sm hover:opacity-90 transition-opacity">
+          <button onClick={() => setShowNewTask(true)} className="flex items-center gap-2 px-4 py-2.5 rounded-xl gold-gradient btn-gold text-background font-semibold text-sm shadow-lg shadow-gold/20">
             <Icon name="Plus" size={17} /> <span className="hidden lg:inline">Новая задача</span>
           </button>
           <button className="flex items-center gap-2 px-3.5 py-2.5 rounded-xl glass-card text-sm">
@@ -280,6 +282,96 @@ const Planner = () => {
           </div>
         </div>
       </div>
+
+      {/* ── Новая задача modal ── */}
+      <Modal
+        open={showNewTask}
+        onClose={() => setShowNewTask(false)}
+        title="Новая задача"
+        subtitle="Добавить в планер"
+        icon="CalendarCheck"
+        size="md"
+        footer={
+          <div className="flex gap-3">
+            <button onClick={() => setShowNewTask(false)} className="flex-1 py-3 rounded-xl gold-gradient btn-gold text-background font-semibold text-sm shadow-lg shadow-gold/20">
+              Создать задачу
+            </button>
+            <button onClick={() => setShowNewTask(false)} className="px-5 py-3 rounded-xl bg-secondary border border-border text-sm hover:border-gold/30 transition-colors">
+              Отмена
+            </button>
+          </div>
+        }
+      >
+        <div className="space-y-4 pb-2">
+          <div>
+            <label className="text-[11px] text-muted-foreground mb-1.5 block font-medium">Название задачи</label>
+            <div className="flex items-center gap-3 px-3.5 py-3 rounded-xl bg-secondary border border-border focus-within:border-gold/50 transition-colors">
+              <Icon name="FileText" size={15} className="text-gold shrink-0" />
+              <input placeholder="Что нужно сделать?" className="bg-transparent text-sm outline-none flex-1 text-foreground placeholder:text-muted-foreground/50" />
+            </div>
+          </div>
+          <div>
+            <label className="text-[11px] text-muted-foreground mb-2 block font-medium">Тип задачи</label>
+            <div className="grid grid-cols-4 gap-2">
+              {[
+                { l: 'Задача', i: 'CheckSquare', active: true },
+                { l: 'Замер', i: 'Ruler', active: false },
+                { l: 'Встреча', i: 'Users', active: false },
+                { l: 'Звонок', i: 'Phone', active: false },
+              ].map((t) => (
+                <button key={t.l} className={`flex flex-col items-center gap-1.5 py-3 rounded-xl border text-[11px] transition-all ${t.active ? 'border-gold/40 bg-gold/8 text-gold' : 'border-border bg-secondary text-muted-foreground hover:border-gold/25'}`}>
+                  <Icon name={t.i} size={16} />
+                  {t.l}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div>
+            <label className="text-[11px] text-muted-foreground mb-2 block font-medium">Приоритет</label>
+            <div className="flex gap-2">
+              {[
+                { l: 'Низкий', c: 'text-status-ok border-status-ok/20 hover:bg-status-ok/8' },
+                { l: 'Средний', c: 'text-status-warn border-status-warn/20 hover:bg-status-warn/8' },
+                { l: 'Высокий', c: 'text-status-crit border-status-crit/20 hover:bg-status-crit/8' },
+                { l: 'Критический', c: 'text-status-crit border-status-crit/40 bg-status-crit/8 font-semibold' },
+              ].map((p) => (
+                <button key={p.l} className={`flex-1 py-2 rounded-xl border text-[11px] transition-all bg-secondary ${p.c}`}>{p.l}</button>
+              ))}
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="text-[11px] text-muted-foreground mb-1.5 block font-medium">Дата</label>
+              <div className="flex items-center gap-3 px-3.5 py-3 rounded-xl bg-secondary border border-border focus-within:border-gold/50 transition-colors">
+                <Icon name="Calendar" size={15} className="text-gold shrink-0" />
+                <input type="date" className="bg-transparent text-sm outline-none flex-1 text-foreground" />
+              </div>
+            </div>
+            <div>
+              <label className="text-[11px] text-muted-foreground mb-1.5 block font-medium">Время</label>
+              <div className="flex items-center gap-3 px-3.5 py-3 rounded-xl bg-secondary border border-border focus-within:border-gold/50 transition-colors">
+                <Icon name="Clock" size={15} className="text-gold shrink-0" />
+                <input type="time" className="bg-transparent text-sm outline-none flex-1 text-foreground" />
+              </div>
+            </div>
+          </div>
+          <div>
+            <label className="text-[11px] text-muted-foreground mb-2 block font-medium">Ответственный</label>
+            <div className="flex gap-2 flex-wrap">
+              {['Иванова А.С.', 'Петрова Е.В.', 'Кузнецов Д.А.', 'Смирнов П.А.'].map((m, i) => (
+                <button key={m} className={`px-3 py-1.5 rounded-xl text-[12px] border transition-all ${i === 0 ? 'gold-gradient text-background border-transparent font-semibold' : 'bg-secondary border-border text-muted-foreground hover:border-gold/30'}`}>{m}</button>
+              ))}
+            </div>
+          </div>
+          <div>
+            <label className="text-[11px] text-muted-foreground mb-1.5 block font-medium">Связать со сделкой / заказом</label>
+            <div className="flex items-center gap-3 px-3.5 py-3 rounded-xl bg-secondary border border-border focus-within:border-gold/50 transition-colors">
+              <Icon name="Link" size={15} className="text-gold shrink-0" />
+              <input placeholder="№1258, КП-1246..." className="bg-transparent text-sm outline-none flex-1 text-foreground placeholder:text-muted-foreground/50" />
+            </div>
+          </div>
+        </div>
+      </Modal>
     </Layout>
   );
 };

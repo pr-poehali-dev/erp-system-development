@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import Layout from '@/components/Layout';
 import Icon from '@/components/ui/icon';
+import Modal from '@/components/Modal';
 
 const orders = [
   { id: '№1258', client: 'Мария Петрова', obj: 'Квартира, ЖК «Парковый», Симферополь', type: 'Кухня и остров', sum: '1 245 000 ₽', status: 'В производстве', statusTone: 'ok', mgr: 'Иванова А.С.', deadline: '21.07.2026', pct: 65, company: 'ТМ' },
@@ -35,6 +36,8 @@ const stages = [
 const Orders = () => {
   const [sel, setSel] = useState('№1258');
   const selOrder = orders.find((o) => o.id === sel)!;
+  const [showNew, setShowNew] = useState(false);
+  const [showComment, setShowComment] = useState(false);
 
   return (
     <Layout
@@ -42,10 +45,10 @@ const Orders = () => {
       titleIcon="ClipboardList"
       actions={
         <>
-          <button className="flex items-center gap-2 px-4 py-2.5 rounded-xl gold-gradient text-background font-semibold text-sm hover:opacity-90">
+          <button onClick={() => setShowNew(true)} className="flex items-center gap-2 px-4 py-2.5 rounded-xl gold-gradient btn-gold text-background font-semibold text-sm shadow-lg shadow-gold/20">
             <Icon name="Plus" size={17} /> Новый заказ
           </button>
-          <button className="flex items-center gap-2 px-3.5 py-2.5 rounded-xl glass-card text-sm">
+          <button className="flex items-center gap-2 px-3.5 py-2.5 rounded-xl glass-card text-sm hover:border-gold/30 transition-all">
             <Icon name="Download" size={16} /> Экспорт
           </button>
         </>
@@ -169,14 +172,127 @@ const Orders = () => {
           </div>
 
           <div className="flex gap-2">
-            <button className="flex-1 py-2.5 rounded-xl gold-gradient text-background font-semibold text-sm flex items-center justify-center gap-2">
+            <button className="flex-1 py-2.5 rounded-xl gold-gradient btn-gold text-background font-semibold text-sm flex items-center justify-center gap-2 shadow-gold/20 shadow-md">
               <Icon name="Pencil" size={15} /> Редактировать
             </button>
-            <button className="px-4 py-2.5 rounded-xl bg-secondary border border-border text-sm"><Icon name="FileText" size={15} /></button>
-            <button className="px-4 py-2.5 rounded-xl bg-secondary border border-border text-sm"><Icon name="Printer" size={15} /></button>
+            <button onClick={() => setShowComment(true)} className="px-4 py-2.5 rounded-xl bg-secondary border border-border text-sm hover:border-gold/30 transition-all"><Icon name="MessageSquare" size={15} /></button>
+            <button className="px-4 py-2.5 rounded-xl bg-secondary border border-border text-sm hover:border-gold/30 transition-all"><Icon name="Printer" size={15} /></button>
           </div>
         </div>
       </div>
+
+      {/* ── Новый заказ modal ── */}
+      <Modal
+        open={showNew}
+        onClose={() => setShowNew(false)}
+        title="Новый заказ"
+        subtitle="Запустить в производство"
+        icon="ClipboardList"
+        size="md"
+        footer={
+          <div className="flex gap-3">
+            <button onClick={() => setShowNew(false)} className="flex-1 py-3 rounded-xl gold-gradient btn-gold text-background font-semibold text-sm shadow-lg shadow-gold/20">
+              Создать заказ
+            </button>
+            <button onClick={() => setShowNew(false)} className="px-5 py-3 rounded-xl bg-secondary border border-border text-sm hover:border-gold/30 transition-colors">
+              Отмена
+            </button>
+          </div>
+        }
+      >
+        <div className="space-y-4 pb-2">
+          {[
+            { label: 'Клиент / Сделка', placeholder: 'Найти клиента или номер сделки...', icon: 'User' },
+            { label: 'Тип мебели / Направление', placeholder: 'Кухня и остров, Гостиная...', icon: 'Sofa' },
+            { label: 'Объект / Адрес', placeholder: 'Симферополь, ЖК «Парковый», кв. 45', icon: 'MapPin' },
+          ].map((f) => (
+            <div key={f.label}>
+              <label className="text-[11px] text-muted-foreground mb-1.5 block font-medium">{f.label}</label>
+              <div className="flex items-center gap-3 px-3.5 py-3 rounded-xl bg-secondary border border-border focus-within:border-gold/50 transition-colors">
+                <Icon name={f.icon} size={15} className="text-gold shrink-0" />
+                <input placeholder={f.placeholder} className="bg-transparent text-sm outline-none flex-1 text-foreground placeholder:text-muted-foreground/50" />
+              </div>
+            </div>
+          ))}
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="text-[11px] text-muted-foreground mb-1.5 block font-medium">Сумма заказа</label>
+              <div className="flex items-center gap-3 px-3.5 py-3 rounded-xl bg-secondary border border-border focus-within:border-gold/50 transition-colors">
+                <Icon name="CircleDollarSign" size={15} className="text-gold shrink-0" />
+                <input placeholder="1 245 000" className="bg-transparent text-sm outline-none flex-1 text-foreground placeholder:text-muted-foreground/50" />
+                <span className="text-muted-foreground text-sm">₽</span>
+              </div>
+            </div>
+            <div>
+              <label className="text-[11px] text-muted-foreground mb-1.5 block font-medium">Срок сдачи</label>
+              <div className="flex items-center gap-3 px-3.5 py-3 rounded-xl bg-secondary border border-border focus-within:border-gold/50 transition-colors">
+                <Icon name="Calendar" size={15} className="text-gold shrink-0" />
+                <input type="date" className="bg-transparent text-sm outline-none flex-1 text-foreground" />
+              </div>
+            </div>
+          </div>
+          <div>
+            <label className="text-[11px] text-muted-foreground mb-2 block font-medium">Компания</label>
+            <div className="flex gap-3">
+              {['Территория Мебели', 'Контур+'].map((c, i) => (
+                <button key={c} className={`flex-1 py-2.5 rounded-xl text-[13px] font-medium border transition-all ${i === 0 ? 'gold-gradient text-background border-transparent' : 'bg-secondary border-border text-muted-foreground hover:border-gold/30'}`}>{c}</button>
+              ))}
+            </div>
+          </div>
+          <div>
+            <label className="text-[11px] text-muted-foreground mb-2 block font-medium">Менеджер</label>
+            <div className="flex gap-2 flex-wrap">
+              {['Иванова А.С.', 'Петрова Е.В.', 'Кузнецов Д.А.', 'Смирнов П.А.'].map((m, i) => (
+                <button key={m} className={`px-3 py-1.5 rounded-xl text-[12px] border transition-all ${i === 0 ? 'gold-gradient text-background border-transparent font-semibold' : 'bg-secondary border-border text-muted-foreground hover:border-gold/30'}`}>{m}</button>
+              ))}
+            </div>
+          </div>
+          <div>
+            <label className="text-[11px] text-muted-foreground mb-1.5 block font-medium">Примечание</label>
+            <textarea placeholder="Особые условия, материалы, пожелания..." rows={2}
+              className="w-full px-3.5 py-3 rounded-xl bg-secondary border border-border focus:border-gold/50 transition-colors text-sm outline-none text-foreground placeholder:text-muted-foreground/50 resize-none" />
+          </div>
+        </div>
+      </Modal>
+
+      {/* ── Комментарий к заказу ── */}
+      <Modal
+        open={showComment}
+        onClose={() => setShowComment(false)}
+        title="Комментарий к заказу"
+        subtitle={`Заказ ${selOrder.id} · ${selOrder.client}`}
+        icon="MessageSquare"
+        size="sm"
+        badge={{ label: selOrder.status, tone: selOrder.statusTone as 'ok'|'warn'|'crit'|'info'|'gold'|'muted' }}
+        footer={
+          <button onClick={() => setShowComment(false)} className="w-full py-3 rounded-xl gold-gradient btn-gold text-background font-semibold text-sm">
+            Сохранить комментарий
+          </button>
+        }
+      >
+        <div className="space-y-3 pb-2">
+          <div className="space-y-2">
+            {[
+              { who: 'Иванова А.С.', time: '22.06.2026, 14:20', text: 'Клиент подтвердил цвет фасадов — серый матовый RAL 7016.' },
+              { who: 'Кузнецов Д.А.', time: '21.06.2026, 11:05', text: 'Передан чертёж технологу. Ждём согласования.' },
+              { who: 'Система', time: '20.06.2026, 09:30', text: 'Заказ создан и запущен в производство.' },
+            ].map((c) => (
+              <div key={c.time} className="flex gap-3 p-3 rounded-xl bg-secondary">
+                <div className="w-7 h-7 rounded-full bg-gold/15 flex items-center justify-center text-[10px] font-bold text-gold shrink-0">{c.who.slice(0, 2)}</div>
+                <div>
+                  <div className="text-[11px] text-muted-foreground mb-1">{c.who} · {c.time}</div>
+                  <div className="text-[13px] text-foreground">{c.text}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+          <div>
+            <label className="text-[11px] text-muted-foreground mb-1.5 block font-medium">Добавить комментарий</label>
+            <textarea rows={3} placeholder="Напишите комментарий по заказу..."
+              className="w-full px-3.5 py-3 rounded-xl bg-secondary border border-border focus:border-gold/50 transition-colors text-sm outline-none text-foreground placeholder:text-muted-foreground/50 resize-none" />
+          </div>
+        </div>
+      </Modal>
     </Layout>
   );
 };

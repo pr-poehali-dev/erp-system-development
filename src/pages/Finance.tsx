@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import Layout from '@/components/Layout';
 import Icon from '@/components/ui/icon';
+import Modal from '@/components/Modal';
 
 const periods = ['Июнь 2026', 'Май 2026', 'Q2 2026', 'Год'];
 
@@ -28,6 +29,8 @@ const toneTxt: Record<string, string> = { ok: 'text-status-ok', warn: 'text-stat
 
 const Finance = () => {
   const [period, setPeriod] = useState('Июнь 2026');
+  const [showPayment, setShowPayment] = useState(false);
+  const [showExport, setShowExport] = useState(false);
   return (
     <Layout title="Финансы и себестоимость" titleIcon="CircleDollarSign" actions={
       <>
@@ -36,7 +39,10 @@ const Finance = () => {
             <button key={p} onClick={() => setPeriod(p)} className={`px-3 py-1.5 rounded-lg text-[12px] font-medium transition-colors ${period === p ? 'gold-gradient text-background' : 'text-muted-foreground hover:text-foreground'}`}>{p}</button>
           ))}
         </div>
-        <button className="flex items-center gap-2 px-3.5 py-2.5 rounded-xl glass-card text-sm">
+        <button onClick={() => setShowPayment(true)} className="flex items-center gap-2 px-4 py-2.5 rounded-xl gold-gradient btn-gold text-background font-semibold text-sm shadow-lg shadow-gold/20">
+          <Icon name="Plus" size={15} /> Платёж
+        </button>
+        <button onClick={() => setShowExport(true)} className="flex items-center gap-2 px-3.5 py-2.5 rounded-xl glass-card text-sm hover:border-gold/30 transition-all">
           <Icon name="Download" size={15} /> Экспорт
         </button>
       </>
@@ -115,6 +121,123 @@ const Finance = () => {
           </tbody>
         </table>
       </div>
+
+      {/* ── Новый платёж modal ── */}
+      <Modal
+        open={showPayment}
+        onClose={() => setShowPayment(false)}
+        title="Зафиксировать платёж"
+        subtitle="Поступление или расход"
+        icon="CircleDollarSign"
+        size="sm"
+        footer={
+          <div className="flex gap-3">
+            <button onClick={() => setShowPayment(false)} className="flex-1 py-3 rounded-xl gold-gradient btn-gold text-background font-semibold text-sm shadow-lg shadow-gold/20">
+              Сохранить
+            </button>
+            <button onClick={() => setShowPayment(false)} className="px-5 py-3 rounded-xl bg-secondary border border-border text-sm hover:border-gold/30 transition-colors">
+              Отмена
+            </button>
+          </div>
+        }
+      >
+        <div className="space-y-4 pb-2">
+          <div>
+            <label className="text-[11px] text-muted-foreground mb-2 block font-medium">Тип операции</label>
+            <div className="grid grid-cols-2 gap-3">
+              {[
+                { l: 'Поступление', i: 'TrendingUp', c: 'border-status-ok/40 bg-status-ok/8 text-status-ok', active: true },
+                { l: 'Расход', i: 'TrendingDown', c: 'border-border bg-secondary text-muted-foreground hover:border-status-crit/30', active: false },
+              ].map((t) => (
+                <button key={t.l} className={`flex items-center gap-2.5 p-3 rounded-xl border text-[13px] font-medium transition-all ${t.c}`}>
+                  <Icon name={t.i} size={16} /> {t.l}
+                </button>
+              ))}
+            </div>
+          </div>
+          {[
+            { label: 'Сумма', placeholder: '1 245 000', icon: 'CircleDollarSign', suffix: '₽' },
+            { label: 'Заказ / Клиент', placeholder: '№1258 · Мария Петрова', icon: 'Link' },
+          ].map((f) => (
+            <div key={f.label}>
+              <label className="text-[11px] text-muted-foreground mb-1.5 block font-medium">{f.label}</label>
+              <div className="flex items-center gap-3 px-3.5 py-3 rounded-xl bg-secondary border border-border focus-within:border-gold/50 transition-colors">
+                <Icon name={f.icon} size={15} className="text-gold shrink-0" />
+                <input placeholder={f.placeholder} className="bg-transparent text-sm outline-none flex-1 text-foreground placeholder:text-muted-foreground/50" />
+                {f.suffix && <span className="text-muted-foreground text-sm">{f.suffix}</span>}
+              </div>
+            </div>
+          ))}
+          <div>
+            <label className="text-[11px] text-muted-foreground mb-1.5 block font-medium">Дата</label>
+            <div className="flex items-center gap-3 px-3.5 py-3 rounded-xl bg-secondary border border-border focus-within:border-gold/50 transition-colors">
+              <Icon name="Calendar" size={15} className="text-gold shrink-0" />
+              <input type="date" className="bg-transparent text-sm outline-none flex-1 text-foreground" />
+            </div>
+          </div>
+          <div>
+            <label className="text-[11px] text-muted-foreground mb-2 block font-medium">Категория</label>
+            <div className="flex flex-wrap gap-2">
+              {['Оплата от клиента', 'Материалы', 'Зарплата', 'Аренда', 'Прочее'].map((c, i) => (
+                <button key={c} className={`px-3 py-1.5 rounded-lg text-[12px] border transition-all ${i === 0 ? 'gold-gradient text-background border-transparent font-semibold' : 'bg-secondary border-border text-muted-foreground hover:border-gold/30'}`}>{c}</button>
+              ))}
+            </div>
+          </div>
+          <div>
+            <label className="text-[11px] text-muted-foreground mb-1.5 block font-medium">Комментарий</label>
+            <textarea rows={2} placeholder="Назначение платежа..."
+              className="w-full px-3.5 py-3 rounded-xl bg-secondary border border-border focus:border-gold/50 transition-colors text-sm outline-none text-foreground placeholder:text-muted-foreground/50 resize-none" />
+          </div>
+        </div>
+      </Modal>
+
+      {/* ── Экспорт modal ── */}
+      <Modal
+        open={showExport}
+        onClose={() => setShowExport(false)}
+        title="Экспорт отчёта"
+        icon="Download"
+        size="sm"
+        footer={
+          <button onClick={() => setShowExport(false)} className="w-full py-3 rounded-xl gold-gradient btn-gold text-background font-semibold text-sm shadow-lg shadow-gold/20 flex items-center justify-center gap-2">
+            <Icon name="Download" size={16} /> Скачать отчёт
+          </button>
+        }
+      >
+        <div className="space-y-4 pb-2">
+          <div>
+            <label className="text-[11px] text-muted-foreground mb-2 block font-medium">Формат файла</label>
+            <div className="grid grid-cols-3 gap-2">
+              {[
+                { l: 'Excel', i: 'FileSpreadsheet', active: true },
+                { l: 'PDF', i: 'FileText', active: false },
+                { l: 'CSV', i: 'FileCode', active: false },
+              ].map((f) => (
+                <button key={f.l} className={`flex flex-col items-center gap-2 py-3 rounded-xl border text-[12px] transition-all ${f.active ? 'gold-gradient text-background border-transparent font-semibold' : 'bg-secondary border-border text-muted-foreground hover:border-gold/25'}`}>
+                  <Icon name={f.i} size={18} /> {f.l}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div>
+            <label className="text-[11px] text-muted-foreground mb-2 block font-medium">Данные для включения</label>
+            <div className="space-y-2">
+              {['Движение денежных средств', 'Себестоимость по заказам', 'Маржинальность', 'Сравнение с предыдущим периодом'].map((opt, i) => (
+                <label key={opt} className="flex items-center gap-3 cursor-pointer p-2.5 rounded-lg hover:bg-secondary/60 transition-colors">
+                  <div className={`w-4 h-4 rounded flex items-center justify-center border shrink-0 ${i < 3 ? 'gold-gradient border-transparent' : 'border-border'}`}>
+                    {i < 3 && <Icon name="Check" size={10} className="text-background" />}
+                  </div>
+                  <span className="text-[13px] text-foreground">{opt}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+          <div className="p-3 rounded-xl bg-gold/8 border border-gold/15 flex items-center gap-3 text-[12px]">
+            <Icon name="Info" size={15} className="text-gold shrink-0" />
+            <span className="text-muted-foreground">Период: <span className="text-foreground font-medium">{period}</span> · Компания: Территория Мебели</span>
+          </div>
+        </div>
+      </Modal>
     </Layout>
   );
 };

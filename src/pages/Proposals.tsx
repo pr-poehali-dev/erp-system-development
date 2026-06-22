@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import Layout from '@/components/Layout';
 import Icon from '@/components/ui/icon';
+import Modal from '@/components/Modal';
 
 const HERO_IMG = 'https://cdn.poehali.dev/projects/eef01eb5-7830-4400-a486-64829cb2d730/files/731403e6-0aba-4e1a-8599-1dee4329e054.jpg';
 
@@ -47,6 +48,9 @@ const Proposals = () => {
   const [active, setActive] = useState('Все КП');
   const [selected, setSelected] = useState('КП-1258');
   const sel = proposals.find((p) => p.id === selected)!;
+  const [showCreate, setShowCreate] = useState(false);
+  const [showSend, setShowSend] = useState(false);
+  const [showPDF, setShowPDF] = useState(false);;
 
   return (
     <Layout
@@ -54,10 +58,10 @@ const Proposals = () => {
       titleIcon="FileText"
       actions={
         <>
-          <button className="flex items-center gap-2 px-4 py-2.5 rounded-xl gold-gradient text-background font-semibold text-sm hover:opacity-90 transition-opacity">
+          <button onClick={() => setShowCreate(true)} className="flex items-center gap-2 px-4 py-2.5 rounded-xl gold-gradient btn-gold text-background font-semibold text-sm shadow-lg shadow-gold/20">
             <Icon name="Plus" size={17} /> <span className="hidden lg:inline">Создать КП</span>
           </button>
-          <button className="flex items-center gap-2 px-3.5 py-2.5 rounded-xl glass-card text-sm">
+          <button className="flex items-center gap-2 px-3.5 py-2.5 rounded-xl glass-card text-sm hover:border-gold/30 transition-all">
             <Icon name="Download" size={16} /> <span className="hidden lg:inline">Экспорт</span>
           </button>
         </>
@@ -140,8 +144,14 @@ const Proposals = () => {
             </div>
 
             <div className="flex flex-wrap gap-2 mb-5">
-              {[['Скачать PDF', 'FileDown'], ['Отправить', 'Send'], ['Копировать ссылку', 'Link'], ['Создать версию', 'Copy']].map(([l, i]) => (
-                <button key={l} className="flex items-center gap-2 px-3.5 py-2 rounded-lg bg-secondary text-xs text-foreground hover:bg-muted transition-colors">
+              <button onClick={() => setShowPDF(true)} className="flex items-center gap-2 px-3.5 py-2 rounded-lg bg-secondary text-xs text-foreground hover:bg-muted hover:border-gold/30 border border-border transition-all">
+                <Icon name="FileDown" size={14} className="text-gold" /> Скачать PDF
+              </button>
+              <button onClick={() => setShowSend(true)} className="flex items-center gap-2 px-3.5 py-2 rounded-lg gold-gradient btn-gold text-background text-xs font-semibold">
+                <Icon name="Send" size={14} /> Отправить
+              </button>
+              {[['Копировать ссылку', 'Link'], ['Создать версию', 'Copy']].map(([l, i]) => (
+                <button key={l} className="flex items-center gap-2 px-3.5 py-2 rounded-lg bg-secondary text-xs text-foreground hover:bg-muted border border-border hover:border-gold/30 transition-all">
                   <Icon name={i} size={14} className="text-gold" /> {l}
                 </button>
               ))}
@@ -243,6 +253,193 @@ const Proposals = () => {
           </div>
         </div>
       </div>
+
+      {/* ── Создать КП modal ── */}
+      <Modal
+        open={showCreate}
+        onClose={() => setShowCreate(false)}
+        title="Создать коммерческое предложение"
+        subtitle="Новое КП для клиента"
+        icon="FileText"
+        size="lg"
+        footer={
+          <div className="flex gap-3">
+            <button onClick={() => setShowCreate(false)} className="flex-1 py-3 rounded-xl gold-gradient btn-gold text-background font-semibold text-sm shadow-lg shadow-gold/20">
+              Создать КП
+            </button>
+            <button onClick={() => setShowCreate(false)} className="px-5 py-3 rounded-xl bg-secondary border border-border text-sm hover:border-gold/30 transition-colors">
+              Сохранить черновик
+            </button>
+          </div>
+        }
+      >
+        <div className="grid grid-cols-2 gap-4 pb-2">
+          <div className="col-span-2">
+            <label className="text-[11px] text-muted-foreground mb-1.5 block font-medium">Клиент / Сделка</label>
+            <div className="flex items-center gap-3 px-3.5 py-3 rounded-xl bg-secondary border border-border focus-within:border-gold/50 transition-colors">
+              <Icon name="User" size={15} className="text-gold shrink-0" />
+              <input placeholder="Начните вводить имя клиента или номер сделки..." className="bg-transparent text-sm outline-none flex-1 text-foreground placeholder:text-muted-foreground/50" />
+              <Icon name="Search" size={14} className="text-muted-foreground" />
+            </div>
+          </div>
+          {[
+            { label: 'Направление / Тип мебели', placeholder: 'Кухня и остров', icon: 'Sofa' },
+            { label: 'Адрес объекта', placeholder: 'Симферополь, ЖК «Парковый»', icon: 'MapPin' },
+          ].map((f) => (
+            <div key={f.label}>
+              <label className="text-[11px] text-muted-foreground mb-1.5 block font-medium">{f.label}</label>
+              <div className="flex items-center gap-3 px-3.5 py-3 rounded-xl bg-secondary border border-border focus-within:border-gold/50 transition-colors">
+                <Icon name={f.icon} size={15} className="text-gold shrink-0" />
+                <input placeholder={f.placeholder} className="bg-transparent text-sm outline-none flex-1 text-foreground placeholder:text-muted-foreground/50" />
+              </div>
+            </div>
+          ))}
+          <div>
+            <label className="text-[11px] text-muted-foreground mb-1.5 block font-medium">Менеджер</label>
+            <div className="flex items-center gap-3 px-3.5 py-3 rounded-xl bg-secondary border border-border focus-within:border-gold/50 transition-colors">
+              <Icon name="UserCircle" size={15} className="text-gold shrink-0" />
+              <input defaultValue="Иванова А.С." className="bg-transparent text-sm outline-none flex-1 text-foreground" />
+            </div>
+          </div>
+          <div>
+            <label className="text-[11px] text-muted-foreground mb-1.5 block font-medium">Компания</label>
+            <div className="flex gap-2">
+              {['Территория Мебели', 'Контур+'].map((c, i) => (
+                <button key={c} className={`flex-1 py-2.5 rounded-xl text-[12px] font-medium transition-all border ${i === 0 ? 'gold-gradient text-background border-transparent' : 'bg-secondary border-border text-muted-foreground hover:border-gold/30'}`}>{c}</button>
+              ))}
+            </div>
+          </div>
+          <div>
+            <label className="text-[11px] text-muted-foreground mb-1.5 block font-medium">Сумма (предварительно)</label>
+            <div className="flex items-center gap-3 px-3.5 py-3 rounded-xl bg-secondary border border-border focus-within:border-gold/50 transition-colors">
+              <Icon name="CircleDollarSign" size={15} className="text-gold shrink-0" />
+              <input placeholder="1 500 000" className="bg-transparent text-sm outline-none flex-1 text-foreground placeholder:text-muted-foreground/50" />
+              <span className="text-muted-foreground text-sm shrink-0">₽</span>
+            </div>
+          </div>
+          <div>
+            <label className="text-[11px] text-muted-foreground mb-1.5 block font-medium">Срок действия КП</label>
+            <div className="flex items-center gap-3 px-3.5 py-3 rounded-xl bg-secondary border border-border focus-within:border-gold/50 transition-colors">
+              <Icon name="Calendar" size={15} className="text-gold shrink-0" />
+              <input placeholder="14 дней" className="bg-transparent text-sm outline-none flex-1 text-foreground placeholder:text-muted-foreground/50" />
+            </div>
+          </div>
+          <div className="col-span-2">
+            <label className="text-[11px] text-muted-foreground mb-2 block font-medium">Шаблон КП</label>
+            <div className="grid grid-cols-3 gap-3">
+              {['Стандартный', 'Премиум (Территория Мебели)', 'Бюджетный (Контур+)'].map((t, i) => (
+                <button key={t} className={`p-3 rounded-xl text-[12px] text-left border transition-all ${i === 1 ? 'border-gold/40 bg-gold/8 text-gold' : 'border-border bg-secondary text-muted-foreground hover:border-gold/30'}`}>
+                  <Icon name="FileText" size={16} className="mb-2 block" />
+                  {t}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="col-span-2">
+            <label className="text-[11px] text-muted-foreground mb-1.5 block font-medium">Примечание</label>
+            <textarea placeholder="Особые условия, пожелания клиента..." rows={2}
+              className="w-full px-3.5 py-3 rounded-xl bg-secondary border border-border focus:border-gold/50 transition-colors text-sm outline-none text-foreground placeholder:text-muted-foreground/50 resize-none" />
+          </div>
+        </div>
+      </Modal>
+
+      {/* ── Отправить КП modal ── */}
+      <Modal
+        open={showSend}
+        onClose={() => setShowSend(false)}
+        title="Отправить КП клиенту"
+        subtitle={`${sel.id} · ${sel.client}`}
+        icon="Send"
+        size="sm"
+        badge={{ label: sel.status, tone: sel.tone as 'ok' | 'warn' | 'crit' | 'info' | 'gold' | 'muted' }}
+        footer={
+          <div className="flex gap-3">
+            <button onClick={() => setShowSend(false)} className="flex-1 py-3 rounded-xl gold-gradient btn-gold text-background font-semibold text-sm shadow-gold/20 shadow-lg flex items-center justify-center gap-2">
+              <Icon name="Send" size={15} /> Отправить
+            </button>
+            <button onClick={() => setShowSend(false)} className="px-5 py-3 rounded-xl bg-secondary border border-border text-sm hover:border-gold/30 transition-colors">
+              Отмена
+            </button>
+          </div>
+        }
+      >
+        <div className="space-y-4 pb-2">
+          <div className="p-3 rounded-xl bg-gold/8 border border-gold/15 flex items-center gap-3">
+            <Icon name="FileText" size={18} className="text-gold shrink-0" />
+            <div>
+              <div className="text-[13px] font-semibold text-foreground">{sel.id} · {sel.item}</div>
+              <div className="text-[11px] text-muted-foreground">{sel.sum} · {sel.ver}</div>
+            </div>
+          </div>
+          {[
+            { label: 'Email клиента', placeholder: 'client@mail.ru', icon: 'Mail', value: 'maria.petrova@mail.ru' },
+            { label: 'Тема письма', placeholder: 'Коммерческое предложение', icon: 'MessageSquare', value: `КП на ${sel.item} — Территория Мебели` },
+          ].map((f) => (
+            <div key={f.label}>
+              <label className="text-[11px] text-muted-foreground mb-1.5 block font-medium">{f.label}</label>
+              <div className="flex items-center gap-3 px-3.5 py-3 rounded-xl bg-secondary border border-border focus-within:border-gold/50 transition-colors">
+                <Icon name={f.icon} size={15} className="text-gold shrink-0" />
+                <input defaultValue={f.value} placeholder={f.placeholder} className="bg-transparent text-sm outline-none flex-1 text-foreground" />
+              </div>
+            </div>
+          ))}
+          <div>
+            <label className="text-[11px] text-muted-foreground mb-1.5 block font-medium">Сообщение</label>
+            <textarea rows={3} defaultValue={`Здравствуйте, ${sel.client}!\n\nВысылаем коммерческое предложение по вашему запросу. Будем рады ответить на вопросы.\n\nС уважением, команда Территория Мебели`}
+              className="w-full px-3.5 py-3 rounded-xl bg-secondary border border-border focus:border-gold/50 transition-colors text-sm outline-none text-foreground resize-none" />
+          </div>
+          <div className="flex items-center gap-3 text-[12px] text-muted-foreground p-3 bg-secondary/50 rounded-xl">
+            <Icon name="Paperclip" size={14} className="text-gold" />
+            <span>КП-1258_v2.pdf · 2.4 МБ — будет прикреплено</span>
+          </div>
+        </div>
+      </Modal>
+
+      {/* ── Скачать PDF modal ── */}
+      <Modal
+        open={showPDF}
+        onClose={() => setShowPDF(false)}
+        title="Скачать PDF"
+        icon="FileDown"
+        size="sm"
+        footer={
+          <button onClick={() => setShowPDF(false)} className="w-full py-3 rounded-xl gold-gradient btn-gold text-background font-semibold text-sm shadow-lg shadow-gold/20 flex items-center justify-center gap-2">
+            <Icon name="Download" size={16} /> Скачать {sel.id}.pdf
+          </button>
+        }
+      >
+        <div className="space-y-3 pb-2">
+          <div className="p-4 rounded-xl bg-secondary text-center">
+            <Icon name="FileText" size={40} className="text-gold mx-auto mb-2" />
+            <div className="font-semibold text-foreground">{sel.id}_v2.pdf</div>
+            <div className="text-[11px] text-muted-foreground mt-1">Предварительный расчёт · {sel.sum}</div>
+          </div>
+          <div>
+            <label className="text-[11px] text-muted-foreground mb-2 block font-medium">Формат</label>
+            <div className="grid grid-cols-3 gap-2">
+              {['A4 Портрет', 'A4 Альбом', 'Компактный'].map((f, i) => (
+                <button key={f} className={`py-2.5 rounded-xl text-[12px] border transition-all ${i === 0 ? 'gold-gradient text-background border-transparent font-semibold' : 'bg-secondary border-border text-muted-foreground hover:border-gold/30'}`}>{f}</button>
+              ))}
+            </div>
+          </div>
+          <div className="flex items-center gap-3 text-[12px]">
+            <div className="w-4 h-4 rounded gold-gradient flex items-center justify-center shrink-0">
+              <Icon name="Check" size={10} className="text-background" />
+            </div>
+            <span className="text-foreground">Включить состав предложения</span>
+          </div>
+          <div className="flex items-center gap-3 text-[12px]">
+            <div className="w-4 h-4 rounded gold-gradient flex items-center justify-center shrink-0">
+              <Icon name="Check" size={10} className="text-background" />
+            </div>
+            <span className="text-foreground">Включить условия и сроки</span>
+          </div>
+          <div className="flex items-center gap-3 text-[12px]">
+            <div className="w-4 h-4 rounded bg-secondary border border-border flex items-center justify-center shrink-0" />
+            <span className="text-muted-foreground">Водяной знак «КОНФИДЕНЦИАЛЬНО»</span>
+          </div>
+        </div>
+      </Modal>
     </Layout>
   );
 };

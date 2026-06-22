@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import Layout from '@/components/Layout';
 import Icon from '@/components/ui/icon';
+import Modal from '@/components/Modal';
 
 const tabs = ['Все замеры', 'Первичные', 'Контрольные', 'Назначенные', 'Выполненные', 'Перенесенные', 'Отмененные'];
 
@@ -55,6 +56,7 @@ const Measurements = () => {
   const [activeTab, setActiveTab] = useState('Все замеры');
   const [selected, setSelected] = useState('Z-1258');
   const sel = measurements.find((m) => m.id === selected) || detailMeas;
+  const [showNew, setShowNew] = useState(false);
 
   return (
     <Layout
@@ -62,10 +64,10 @@ const Measurements = () => {
       titleIcon="Ruler"
       actions={
         <>
-          <button className="flex items-center gap-2 px-4 py-2.5 rounded-xl gold-gradient text-background font-semibold text-sm hover:opacity-90 transition-opacity">
+          <button onClick={() => setShowNew(true)} className="flex items-center gap-2 px-4 py-2.5 rounded-xl gold-gradient btn-gold text-background font-semibold text-sm shadow-lg shadow-gold/20">
             <Icon name="Plus" size={17} /> Новый замер
           </button>
-          <button className="flex items-center gap-2 px-3.5 py-2.5 rounded-xl glass-card text-sm">
+          <button className="flex items-center gap-2 px-3.5 py-2.5 rounded-xl glass-card text-sm hover:border-gold/30 transition-all">
             <Icon name="Download" size={16} /> Экспорт
           </button>
         </>
@@ -334,6 +336,85 @@ const Measurements = () => {
           </button>
         </div>
       </div>
+
+      {/* ── Новый замер modal ── */}
+      <Modal
+        open={showNew}
+        onClose={() => setShowNew(false)}
+        title="Назначить замер"
+        subtitle="Первичный или контрольный"
+        icon="Ruler"
+        size="md"
+        footer={
+          <div className="flex gap-3">
+            <button onClick={() => setShowNew(false)} className="flex-1 py-3 rounded-xl gold-gradient btn-gold text-background font-semibold text-sm shadow-lg shadow-gold/20">
+              Назначить замер
+            </button>
+            <button onClick={() => setShowNew(false)} className="px-5 py-3 rounded-xl bg-secondary border border-border text-sm hover:border-gold/30 transition-colors">
+              Отмена
+            </button>
+          </div>
+        }
+      >
+        <div className="space-y-4 pb-2">
+          <div>
+            <label className="text-[11px] text-muted-foreground mb-2 block font-medium">Тип замера</label>
+            <div className="grid grid-cols-2 gap-3">
+              {[
+                { label: 'Первичный', icon: 'Ruler', sub: 'Первый визит к клиенту' },
+                { label: 'Контрольный', icon: 'ClipboardCheck', sub: 'Перед запуском в производство' },
+              ].map((t, i) => (
+                <button key={t.label} className={`p-3.5 rounded-xl text-left border transition-all ${i === 0 ? 'border-gold/40 bg-gold/8' : 'border-border bg-secondary hover:border-gold/25'}`}>
+                  <Icon name={t.icon} size={18} className={i === 0 ? 'text-gold mb-2' : 'text-muted-foreground mb-2'} />
+                  <div className={`text-[13px] font-semibold ${i === 0 ? 'text-gold' : 'text-foreground'}`}>{t.label}</div>
+                  <div className="text-[11px] text-muted-foreground mt-0.5">{t.sub}</div>
+                </button>
+              ))}
+            </div>
+          </div>
+          {[
+            { label: 'Клиент / Сделка', placeholder: 'Найти клиента...', icon: 'User' },
+            { label: 'Адрес объекта', placeholder: 'Симферополь, ЖК «Парковый», кв. 45', icon: 'MapPin' },
+          ].map((f) => (
+            <div key={f.label}>
+              <label className="text-[11px] text-muted-foreground mb-1.5 block font-medium">{f.label}</label>
+              <div className="flex items-center gap-3 px-3.5 py-3 rounded-xl bg-secondary border border-border focus-within:border-gold/50 transition-colors">
+                <Icon name={f.icon} size={15} className="text-gold shrink-0" />
+                <input placeholder={f.placeholder} className="bg-transparent text-sm outline-none flex-1 text-foreground placeholder:text-muted-foreground/50" />
+              </div>
+            </div>
+          ))}
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="text-[11px] text-muted-foreground mb-1.5 block font-medium">Дата</label>
+              <div className="flex items-center gap-3 px-3.5 py-3 rounded-xl bg-secondary border border-border focus-within:border-gold/50 transition-colors">
+                <Icon name="Calendar" size={15} className="text-gold shrink-0" />
+                <input type="date" className="bg-transparent text-sm outline-none flex-1 text-foreground" />
+              </div>
+            </div>
+            <div>
+              <label className="text-[11px] text-muted-foreground mb-1.5 block font-medium">Время</label>
+              <div className="flex items-center gap-3 px-3.5 py-3 rounded-xl bg-secondary border border-border focus-within:border-gold/50 transition-colors">
+                <Icon name="Clock" size={15} className="text-gold shrink-0" />
+                <input type="time" defaultValue="10:00" className="bg-transparent text-sm outline-none flex-1 text-foreground" />
+              </div>
+            </div>
+          </div>
+          <div>
+            <label className="text-[11px] text-muted-foreground mb-2 block font-medium">Замерщик / Менеджер</label>
+            <div className="flex gap-2 flex-wrap">
+              {['Иванова А.С.', 'Петрова Е.В.', 'Кузнецов Д.А.', 'Смирнов П.А.'].map((m, i) => (
+                <button key={m} className={`px-3 py-2 rounded-xl text-[12px] border transition-all ${i === 0 ? 'gold-gradient text-background border-transparent font-semibold' : 'bg-secondary border-border text-muted-foreground hover:border-gold/30'}`}>{m}</button>
+              ))}
+            </div>
+          </div>
+          <div>
+            <label className="text-[11px] text-muted-foreground mb-1.5 block font-medium">Комментарий</label>
+            <textarea placeholder="Что нужно замерить, особые условия..." rows={2}
+              className="w-full px-3.5 py-3 rounded-xl bg-secondary border border-border focus:border-gold/50 transition-colors text-sm outline-none text-foreground placeholder:text-muted-foreground/50 resize-none" />
+          </div>
+        </div>
+      </Modal>
     </Layout>
   );
 };

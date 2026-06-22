@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import Layout from '@/components/Layout';
 import Icon from '@/components/ui/icon';
+import Modal from '@/components/Modal';
 
 const tabs = ['Канбан', 'Список', 'Мои сделки', 'Аналитика'];
 
@@ -118,6 +119,8 @@ const CRM = () => {
   const [activeTab, setActiveTab] = useState('Канбан');
   const [selectedDeal, setSelectedDeal] = useState<string | null>('d7');
   const [showDetail, setShowDetail] = useState(true);
+  const [showNewDeal, setShowNewDeal] = useState(false);
+  const [showFilter, setShowFilter] = useState(false);
 
   const allDeals = columns.flatMap((c) => c.deals);
   const selDeal = allDeals.find((d) => d.id === selectedDeal);
@@ -128,10 +131,10 @@ const CRM = () => {
       titleIcon="Users"
       actions={
         <>
-          <button className="flex items-center gap-2 px-4 py-2.5 rounded-xl gold-gradient text-background font-semibold text-sm hover:opacity-90 transition-opacity">
+          <button onClick={() => setShowNewDeal(true)} className="flex items-center gap-2 px-4 py-2.5 rounded-xl gold-gradient btn-gold text-background font-semibold text-sm shadow-lg shadow-gold/20">
             <Icon name="Plus" size={17} /> <span className="hidden lg:inline">Новая сделка</span>
           </button>
-          <button className="flex items-center gap-2 px-3.5 py-2.5 rounded-xl glass-card text-sm">
+          <button onClick={() => setShowFilter(true)} className="flex items-center gap-2 px-3.5 py-2.5 rounded-xl glass-card text-sm hover:border-gold/30 transition-all">
             <Icon name="SlidersHorizontal" size={15} /> <span className="hidden lg:inline">Фильтры</span>
           </button>
         </>
@@ -291,6 +294,122 @@ const CRM = () => {
           </div>
         ))}
       </div>
+
+      {/* ── Новая сделка modal ── */}
+      <Modal
+        open={showNewDeal}
+        onClose={() => setShowNewDeal(false)}
+        title="Новая сделка"
+        subtitle="Добавить лид в воронку продаж"
+        icon="UserPlus"
+        size="md"
+        footer={
+          <div className="flex gap-3">
+            <button onClick={() => setShowNewDeal(false)} className="flex-1 py-3 rounded-xl gold-gradient btn-gold text-background font-semibold text-sm shadow-lg shadow-gold/20">
+              Создать сделку
+            </button>
+            <button onClick={() => setShowNewDeal(false)} className="px-5 py-3 rounded-xl bg-secondary border border-border text-sm hover:border-gold/30 transition-colors">
+              Отмена
+            </button>
+          </div>
+        }
+      >
+        <div className="space-y-4 pb-2">
+          <div className="grid grid-cols-2 gap-4">
+            {[
+              { label: 'Имя клиента', placeholder: 'Иванова Мария А.', icon: 'User', full: true },
+              { label: 'Телефон', placeholder: '+7 (978) 000-00-00', icon: 'Phone' },
+              { label: 'Email', placeholder: 'client@mail.ru', icon: 'Mail' },
+            ].map((f) => (
+              <div key={f.label} className={f.full ? 'col-span-2' : ''}>
+                <label className="text-[11px] text-muted-foreground mb-1.5 block font-medium">{f.label}</label>
+                <div className="flex items-center gap-3 px-3.5 py-3 rounded-xl bg-secondary border border-border focus-within:border-gold/50 transition-colors">
+                  <Icon name={f.icon} size={15} className="text-gold shrink-0" />
+                  <input placeholder={f.placeholder} className="bg-transparent text-sm outline-none flex-1 text-foreground placeholder:text-muted-foreground/50" />
+                </div>
+              </div>
+            ))}
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="text-[11px] text-muted-foreground mb-1.5 block font-medium">Тип мебели</label>
+              <div className="flex items-center gap-3 px-3.5 py-3 rounded-xl bg-secondary border border-border focus-within:border-gold/50 transition-colors">
+                <Icon name="Sofa" size={15} className="text-gold shrink-0" />
+                <input placeholder="Кухня, гостиная..." className="bg-transparent text-sm outline-none flex-1 text-foreground placeholder:text-muted-foreground/50" />
+              </div>
+            </div>
+            <div>
+              <label className="text-[11px] text-muted-foreground mb-1.5 block font-medium">Источник</label>
+              <div className="flex items-center gap-3 px-3.5 py-3 rounded-xl bg-secondary border border-border focus-within:border-gold/50 transition-colors">
+                <Icon name="Share2" size={15} className="text-gold shrink-0" />
+                <input placeholder="Instagram, ВК..." className="bg-transparent text-sm outline-none flex-1 text-foreground placeholder:text-muted-foreground/50" />
+              </div>
+            </div>
+          </div>
+          <div>
+            <label className="text-[11px] text-muted-foreground mb-1.5 block font-medium">Объект / Адрес</label>
+            <div className="flex items-center gap-3 px-3.5 py-3 rounded-xl bg-secondary border border-border focus-within:border-gold/50 transition-colors">
+              <Icon name="MapPin" size={15} className="text-gold shrink-0" />
+              <input placeholder="Симферополь, ЖК «Парковый», кв. 45" className="bg-transparent text-sm outline-none flex-1 text-foreground placeholder:text-muted-foreground/50" />
+            </div>
+          </div>
+          <div>
+            <label className="text-[11px] text-muted-foreground mb-1.5 block font-medium">Менеджер</label>
+            <div className="flex gap-2">
+              {['Иванова А.С.', 'Петрова Е.В.', 'Кузнецов Д.А.', 'Смирнов П.А.'].map((m) => (
+                <button key={m} className="flex-1 py-2 rounded-lg bg-secondary border border-border text-[11px] text-muted-foreground hover:border-gold/40 hover:text-gold transition-all">{m}</button>
+              ))}
+            </div>
+          </div>
+          <div>
+            <label className="text-[11px] text-muted-foreground mb-1.5 block font-medium">Комментарий</label>
+            <textarea placeholder="Что хочет клиент, пожелания по стилю..." rows={3}
+              className="w-full px-3.5 py-3 rounded-xl bg-secondary border border-border focus:border-gold/50 transition-colors text-sm outline-none text-foreground placeholder:text-muted-foreground/50 resize-none" />
+          </div>
+        </div>
+      </Modal>
+
+      {/* ── Фильтры modal ── */}
+      <Modal
+        open={showFilter}
+        onClose={() => setShowFilter(false)}
+        title="Фильтры сделок"
+        icon="SlidersHorizontal"
+        size="sm"
+        footer={
+          <div className="flex gap-3">
+            <button onClick={() => setShowFilter(false)} className="flex-1 py-3 rounded-xl gold-gradient text-background font-semibold text-sm">Применить</button>
+            <button onClick={() => setShowFilter(false)} className="px-5 py-3 rounded-xl bg-secondary border border-border text-sm hover:border-gold/30 transition-colors">Сбросить</button>
+          </div>
+        }
+      >
+        <div className="space-y-4 pb-2">
+          {[
+            { label: 'Менеджер', options: ['Все', 'Иванова А.С.', 'Петрова Е.В.', 'Кузнецов Д.А.'] },
+            { label: 'Этап воронки', options: ['Все', 'Новый лид', 'Первый контакт', 'Замер назначен', 'КП отправлено'] },
+            { label: 'Компания', options: ['Все', 'Территория Мебели', 'Контур+'] },
+          ].map((f) => (
+            <div key={f.label}>
+              <label className="text-[11px] text-muted-foreground mb-2 block font-medium">{f.label}</label>
+              <div className="flex flex-wrap gap-2">
+                {f.options.map((opt, i) => (
+                  <button key={opt} className={`px-3 py-1.5 rounded-lg text-[12px] transition-all ${i === 0 ? 'gold-gradient text-background font-semibold' : 'bg-secondary border border-border text-muted-foreground hover:border-gold/30 hover:text-foreground'}`}>
+                    {opt}
+                  </button>
+                ))}
+              </div>
+            </div>
+          ))}
+          <div>
+            <label className="text-[11px] text-muted-foreground mb-2 block font-medium">Сумма сделки</label>
+            <div className="flex items-center gap-3">
+              <input placeholder="от" className="flex-1 px-3.5 py-2.5 rounded-xl bg-secondary border border-border text-sm outline-none focus:border-gold/50 transition-colors text-foreground placeholder:text-muted-foreground/50" />
+              <span className="text-muted-foreground">—</span>
+              <input placeholder="до" className="flex-1 px-3.5 py-2.5 rounded-xl bg-secondary border border-border text-sm outline-none focus:border-gold/50 transition-colors text-foreground placeholder:text-muted-foreground/50" />
+            </div>
+          </div>
+        </div>
+      </Modal>
     </Layout>
   );
 };

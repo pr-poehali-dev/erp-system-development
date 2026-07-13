@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import Layout from '@/components/Layout';
 import Icon from '@/components/ui/icon';
+import { ThemeToggleSwitch } from '@/components/ThemeToggle';
 
-const sections = ['Компании', 'Пользователи и роли', 'Уведомления', 'Интеграции', 'Шаблоны', 'Безопасность'];
+const sections = ['Компании', 'Внешний вид', 'Пользователи и роли', 'Уведомления', 'Интеграции', 'Шаблоны', 'Безопасность'];
 
 const Settings = () => {
   const [activeSection, setActiveSection] = useState('Компании');
@@ -15,7 +16,7 @@ const Settings = () => {
         <div className="glass-card rounded-2xl p-3 h-fit animate-fade-in opacity-0">
           {sections.map((s) => (
             <button key={s} onClick={() => setActiveSection(s)} className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl mb-0.5 text-[13px] text-left transition-colors ${activeSection === s ? 'bg-gold/12 text-gold font-semibold' : 'text-muted-foreground hover:bg-secondary hover:text-foreground'}`}>
-              <Icon name={{ 'Компании': 'Building2', 'Пользователи и роли': 'Users', 'Уведомления': 'Bell', 'Интеграции': 'Puzzle', 'Шаблоны': 'FileText', 'Безопасность': 'Shield' }[s] || 'Settings'} size={16} />
+              <Icon name={{ 'Компании': 'Building2', 'Внешний вид': 'Palette', 'Пользователи и роли': 'Users', 'Уведомления': 'Bell', 'Интеграции': 'Puzzle', 'Шаблоны': 'FileText', 'Безопасность': 'Shield' }[s] || 'Settings'} size={16} />
               {s}
             </button>
           ))}
@@ -50,6 +51,14 @@ const Settings = () => {
                 <button className="mt-4 px-5 py-2.5 rounded-xl gold-gradient text-background font-semibold text-sm">Сохранить</button>
               </div>
             </>
+          )}
+
+          {activeSection === 'Внешний вид' && (
+            <div className="glass-card rounded-2xl p-5">
+              <h3 className="font-display font-bold text-base mb-1">Тема оформления</h3>
+              <p className="text-[12px] text-muted-foreground mb-5">Выберите комфортную цветовую схему интерфейса</p>
+              <ThemeToggleSwitch />
+            </div>
           )}
 
           {activeSection === 'Уведомления' && (
@@ -112,7 +121,7 @@ const Settings = () => {
             </div>
           )}
 
-          {!['Компании', 'Уведомления', 'Пользователи и роли'].includes(activeSection) && (
+          {!['Компании', 'Внешний вид', 'Уведомления', 'Пользователи и роли'].includes(activeSection) && (
             <div className="glass-card rounded-2xl p-12 text-center animate-fade-in opacity-0">
               <Icon name="Settings" size={40} className="text-gold mx-auto mb-4 opacity-50" />
               <h3 className="font-display font-bold text-lg text-foreground mb-2">Раздел «{activeSection}»</h3>

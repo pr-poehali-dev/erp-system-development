@@ -1,6 +1,19 @@
 <!DOCTYPE html>
-<html lang="ru" class="dark" style="background-color: hsl(222, 28%, 9%);">
+<html lang="ru" class="dark">
 <head>
+    <script>
+      (function () {
+        try {
+          var stored = localStorage.getItem('erp_theme');
+          var theme = stored === 'light' || stored === 'dark'
+            ? stored
+            : (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
+          document.documentElement.classList.remove('light', 'dark');
+          document.documentElement.classList.add(theme);
+          document.documentElement.style.backgroundColor = theme === 'light' ? 'hsl(40, 30%, 97%)' : 'hsl(222, 28%, 9%)';
+        } catch (e) {}
+      })();
+    </script>
     <meta charset="UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>Поехали!</title>
@@ -30,7 +43,7 @@
       <script src="https://cdn.poehali.dev/intertnal/js/inspector-min.js"></script>
   </head>
 
-<body style="background-color: hsl(222, 28%, 9%); color: hsl(210, 20%, 92%); margin: 0;">
+<body style="margin: 0;">
 <div id="root"></div>
 <script type="module" src="/src/main.tsx"></script>
 

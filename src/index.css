@@ -3,8 +3,9 @@
 @tailwind utilities;
 
 @layer base {
-  :root {
-    /* === СИНЕВАТО-ТЁМНАЯ ТЕМА === */
+  :root,
+  .dark {
+    /* === ТЁМНАЯ ТЕМА (синевато-тёмная) === */
     --background: 222 28% 9%;
     --foreground: 210 20% 92%;
 
@@ -49,37 +50,89 @@
     --sidebar-accent-foreground: 210 20% 88%;
     --sidebar-border: 220 20% 14%;
     --sidebar-ring: 40 55% 60%;
+
+    /* Доп. переменные темы (заменяют хардкод hsl() в компонентах) */
+    --topbar-bg: 222 28% 9%;
+    --hover-bg: 220 20% 15%;
+    --overlay-bg: 222 40% 5%;
+    --glass-1: 220 26% 15%;
+    --glass-2: 222 28% 11%;
+    --glass-light-1: 220 28% 17%;
+    --glass-light-2: 222 26% 13%;
+    --modal-1: 222 28% 13%;
+    --modal-2: 224 30% 9%;
+    --scrollbar-thumb: 220 18% 25%;
+    --scrollbar-thumb-hover: 220 25% 35%;
+    --bg-glow-1: 220 60% 30%;
+    --bg-glow-2: 240 50% 25%;
+    --bg-glow-3: 225 40% 15%;
+
+    color-scheme: dark;
   }
 
-  /* Убираем dark класс - используем только нашу тему */
-  .dark {
-    --background: 222 28% 9%;
-    --foreground: 210 20% 92%;
-    --card: 220 24% 12%;
-    --card-foreground: 210 20% 92%;
-    --popover: 220 24% 12%;
-    --popover-foreground: 210 20% 92%;
-    --primary: 40 55% 60%;
-    --primary-foreground: 220 28% 9%;
-    --secondary: 220 20% 16%;
-    --secondary-foreground: 210 20% 92%;
-    --muted: 220 20% 16%;
-    --muted-foreground: 215 14% 52%;
-    --accent: 40 55% 60%;
-    --accent-foreground: 220 28% 9%;
-    --destructive: 0 70% 55%;
-    --destructive-foreground: 210 20% 98%;
-    --border: 220 18% 20%;
-    --input: 220 18% 20%;
-    --ring: 40 55% 60%;
-    --sidebar-background: 222 30% 7%;
-    --sidebar-foreground: 215 14% 65%;
-    --sidebar-primary: 40 55% 60%;
-    --sidebar-primary-foreground: 220 28% 9%;
-    --sidebar-accent: 220 22% 13%;
-    --sidebar-accent-foreground: 210 20% 88%;
-    --sidebar-border: 220 20% 14%;
-    --sidebar-ring: 40 55% 60%;
+  .light {
+    /* === СВЕТЛАЯ ТЕМА === */
+    --background: 40 30% 97%;
+    --foreground: 222 25% 14%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 222 25% 14%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 25% 14%;
+
+    --primary: 36 55% 48%;
+    --primary-foreground: 40 30% 98%;
+
+    --secondary: 40 20% 93%;
+    --secondary-foreground: 222 25% 18%;
+
+    --muted: 40 18% 92%;
+    --muted-foreground: 220 10% 42%;
+
+    --accent: 36 55% 48%;
+    --accent-foreground: 40 30% 98%;
+
+    --destructive: 0 70% 48%;
+    --destructive-foreground: 40 30% 98%;
+
+    --border: 40 15% 86%;
+    --input: 40 15% 86%;
+    --ring: 36 55% 48%;
+
+    --radius: 0.875rem;
+
+    --gold: 38 62% 46%;
+    --gold-soft: 36 45% 40%;
+    --status-ok: 142 60% 36%;
+    --status-warn: 36 90% 44%;
+    --status-crit: 4 75% 50%;
+
+    --sidebar-background: 40 25% 98%;
+    --sidebar-foreground: 220 12% 38%;
+    --sidebar-primary: 36 55% 46%;
+    --sidebar-primary-foreground: 40 30% 98%;
+    --sidebar-accent: 40 25% 93%;
+    --sidebar-accent-foreground: 222 25% 16%;
+    --sidebar-border: 40 18% 88%;
+    --sidebar-ring: 36 55% 46%;
+
+    --topbar-bg: 40 30% 98%;
+    --hover-bg: 40 22% 91%;
+    --overlay-bg: 220 20% 30%;
+    --glass-1: 0 0% 100%;
+    --glass-2: 40 25% 97%;
+    --glass-light-1: 0 0% 100%;
+    --glass-light-2: 40 22% 96%;
+    --modal-1: 0 0% 100%;
+    --modal-2: 40 20% 98%;
+    --scrollbar-thumb: 40 15% 82%;
+    --scrollbar-thumb-hover: 40 15% 72%;
+    --bg-glow-1: 38 70% 80%;
+    --bg-glow-2: 40 60% 85%;
+    --bg-glow-3: 36 40% 88%;
+
+    color-scheme: light;
   }
 }
 
@@ -97,26 +150,26 @@
   body {
     @apply bg-background text-foreground;
     font-family: "Golos Text", sans-serif;
-    background-color: hsl(222, 28%, 9%);
     background-image:
       radial-gradient(
         ellipse at 75% 0%,
-        hsla(220, 60%, 30%, 0.12) 0px,
+        hsla(var(--bg-glow-1), 0.12) 0px,
         transparent 55%
       ),
       radial-gradient(
         ellipse at 5% 95%,
-        hsla(240, 50%, 25%, 0.1) 0px,
+        hsla(var(--bg-glow-2), 0.1) 0px,
         transparent 50%
       ),
       radial-gradient(
         ellipse at 50% 50%,
-        hsla(225, 40%, 15%, 0.05) 0px,
+        hsla(var(--bg-glow-3), 0.06) 0px,
         transparent 70%
       );
     background-attachment: fixed;
     min-height: 100dvh;
     overflow-x: hidden;
+    transition: background-color 0.25s ease, color 0.25s ease;
   }
 
   /* Custom scrollbar */
@@ -128,11 +181,11 @@
     background: transparent;
   }
   ::-webkit-scrollbar-thumb {
-    background: hsl(220, 18%, 25%);
+    background: hsl(var(--scrollbar-thumb));
     border-radius: 99px;
   }
   ::-webkit-scrollbar-thumb:hover {
-    background: hsl(220, 25%, 35%);
+    background: hsl(var(--scrollbar-thumb-hover));
   }
 
   * {
@@ -163,42 +216,47 @@
     -webkit-text-fill-color: transparent;
   }
 
-  /* === Glass cards - синеватые === */
+  /* === Glass cards === */
   .glass-card {
     background: linear-gradient(
       160deg,
-      hsla(220, 26%, 15%, 0.97),
-      hsla(222, 28%, 11%, 0.97)
+      hsla(var(--glass-1), 0.97),
+      hsla(var(--glass-2), 0.97)
     );
     backdrop-filter: blur(16px);
-    border: 1px solid hsla(220, 35%, 45%, 0.13);
+    border: 1px solid hsla(var(--border), 1);
     box-shadow:
-      0 4px 24px -8px hsla(222, 50%, 5%, 0.5),
+      0 4px 24px -8px hsla(222, 50%, 5%, 0.12),
       inset 0 1px 0 hsla(210, 50%, 70%, 0.04);
+  }
+  .light .glass-card {
+    box-shadow:
+      0 2px 16px -6px hsla(222, 30%, 30%, 0.08),
+      inset 0 1px 0 hsla(0, 0%, 100%, 0.6);
   }
   .glass-card-light {
     background: linear-gradient(
       160deg,
-      hsla(220, 28%, 17%, 0.97),
-      hsla(222, 26%, 13%, 0.97)
+      hsla(var(--glass-light-1), 0.97),
+      hsla(var(--glass-light-2), 0.97)
     );
     backdrop-filter: blur(20px);
-    border: 1px solid hsla(220, 40%, 50%, 0.18);
+    border: 1px solid hsla(var(--border), 1);
     box-shadow:
-      0 8px 32px -12px hsla(222, 50%, 5%, 0.5),
+      0 8px 32px -12px hsla(222, 50%, 5%, 0.18),
       inset 0 1px 0 hsla(210, 50%, 70%, 0.06);
   }
   .glass-modal {
     background: linear-gradient(
       160deg,
-      hsla(222, 28%, 13%, 0.99),
-      hsla(224, 30%, 9%, 0.99)
+      hsla(var(--modal-1), 0.99),
+      hsla(var(--modal-2), 0.99)
     );
     backdrop-filter: blur(32px) saturate(1.5);
-    border: 1px solid hsla(220, 40%, 50%, 0.2);
+    border: 1px solid hsla(var(--border), 1);
     box-shadow:
-      0 30px 90px -20px hsla(222, 50%, 4%, 0.8),
-      0 0 0 1px hsla(220, 35%, 35%, 0.15),
+      0 30px 90px -20px hsla(222, 50%, 4%, 0.35),
+      0 0 0 1px hsla(220, 35%, 35%, 0.08),
       inset 0 1px 0 hsla(210, 60%, 80%, 0.06);
   }
 
@@ -211,9 +269,9 @@
   }
   .card-hover:hover {
     transform: translateY(-2px);
-    border-color: hsla(40, 55%, 58%, 0.3);
+    border-color: hsla(40, 55%, 58%, 0.35);
     box-shadow:
-      0 12px 40px -12px hsla(222, 50%, 5%, 0.6),
+      0 12px 40px -12px hsla(222, 50%, 5%, 0.25),
       0 0 0 1px hsla(40, 50%, 55%, 0.1);
   }
   .btn-gold {
@@ -272,33 +330,36 @@
   /* === Status badges === */
   .badge-ok {
     background: hsla(142, 55%, 48%, 0.13);
-    color: hsl(142 55% 58%);
-    border: 1px solid hsla(142, 55%, 48%, 0.22);
+    color: hsl(var(--status-ok));
+    border: 1px solid hsla(142, 55%, 48%, 0.25);
   }
   .badge-warn {
     background: hsla(38, 90%, 56%, 0.13);
-    color: hsl(38 90% 65%);
-    border: 1px solid hsla(38, 90%, 56%, 0.22);
+    color: hsl(var(--status-warn));
+    border: 1px solid hsla(38, 90%, 56%, 0.25);
   }
   .badge-crit {
     background: hsla(4, 80%, 60%, 0.13);
-    color: hsl(4 80% 68%);
-    border: 1px solid hsla(4, 80%, 60%, 0.22);
+    color: hsl(var(--status-crit));
+    border: 1px solid hsla(4, 80%, 60%, 0.25);
   }
   .badge-info {
     background: hsla(210, 75%, 55%, 0.13);
+    color: hsl(210 75% 45%);
+    border: 1px solid hsla(210, 75%, 55%, 0.25);
+  }
+  .dark .badge-info {
     color: hsl(210 75% 68%);
-    border: 1px solid hsla(210, 75%, 55%, 0.22);
   }
   .badge-gold {
     background: hsla(40, 60%, 55%, 0.13);
-    color: hsl(40 60% 68%);
-    border: 1px solid hsla(40, 60%, 55%, 0.22);
+    color: hsl(var(--gold));
+    border: 1px solid hsla(40, 60%, 55%, 0.25);
   }
   .badge-muted {
-    background: hsla(220, 18%, 18%, 0.8);
-    color: hsl(215 14% 55%);
-    border: 1px solid hsla(220, 18%, 28%, 0.5);
+    background: hsl(var(--muted));
+    color: hsl(var(--muted-foreground));
+    border: 1px solid hsl(var(--border));
   }
 
   /* === Progress bar === */
@@ -322,8 +383,11 @@
 
   /* === Modal overlay === */
   .modal-overlay {
-    background: hsla(222, 40%, 5%, 0.85);
+    background: hsla(var(--overlay-bg), 0.7);
     backdrop-filter: blur(8px) saturate(0.7);
+  }
+  .dark .modal-overlay {
+    background: hsla(var(--overlay-bg), 0.85);
   }
 
   /* === Pulse dot === */
@@ -367,7 +431,7 @@
     background: transparent;
   }
   .scrollbar-thin::-webkit-scrollbar-thumb {
-    background: hsl(220 18% 24%);
+    background: hsl(var(--scrollbar-thumb));
     border-radius: 99px;
   }
 
@@ -403,7 +467,7 @@
   .mobile-sidebar-overlay {
     position: absolute;
     inset: 0;
-    background: hsla(222, 40%, 5%, 0.7);
+    background: hsla(var(--overlay-bg), 0.7);
     backdrop-filter: blur(4px);
   }
   .mobile-sidebar-panel {
@@ -411,8 +475,8 @@
     width: min(280px, 85vw);
     height: 100%;
     overflow-y: auto;
-    background: hsl(222, 30%, 7%);
-    border-right: 1px solid hsl(220, 20%, 14%);
+    background: hsl(var(--sidebar-background));
+    border-right: 1px solid hsl(var(--sidebar-border));
     z-index: 10;
     animation: slide-in-mobile 0.3s cubic-bezier(0.22, 1, 0.36, 1) forwards;
   }

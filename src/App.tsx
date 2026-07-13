@@ -4,6 +4,10 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ToastProvider } from "@/hooks/useToast";
+import { AuthProvider } from "@/hooks/useAuth";
+import { ThemeProvider } from "@/hooks/useTheme";
+import ProtectedRoute from "@/components/ProtectedRoute";
+import Login from "./pages/Login";
 import Index from "./pages/Index";
 import CompanySelect from "./pages/CompanySelect";
 import Planner from "./pages/Planner";
@@ -28,39 +32,46 @@ import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
+const withLayout = (el: React.ReactNode) => <ProtectedRoute>{el}</ProtectedRoute>;
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <ToastProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<CompanySelect />} />
-            <Route path="/dashboard" element={<Index />} />
-            <Route path="/crm" element={<CRM />} />
-            <Route path="/clients" element={<Clients />} />
-            <Route path="/measurements" element={<Measurements />} />
-            <Route path="/control-measurements" element={<ControlMeasurements />} />
-            <Route path="/proposals" element={<Proposals />} />
-            <Route path="/orders" element={<Orders />} />
-            <Route path="/technology" element={<Technology />} />
-            <Route path="/supply" element={<Supply />} />
-            <Route path="/warehouse" element={<Warehouse />} />
-            <Route path="/production" element={<Production />} />
-            <Route path="/logistics" element={<Logistics />} />
-            <Route path="/installation" element={<Installation />} />
-            <Route path="/planner" element={<Planner />} />
-            <Route path="/marketing" element={<Marketing />} />
-            <Route path="/finance" element={<Finance />} />
-            <Route path="/reports" element={<Reports />} />
-            <Route path="/staff" element={<Staff />} />
-            <Route path="/settings" element={<Settings />} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </BrowserRouter>
-      </ToastProvider>
-    </TooltipProvider>
+    <ThemeProvider>
+      <TooltipProvider>
+        <ToastProvider>
+          <AuthProvider>
+            <Toaster />
+            <Sonner />
+            <BrowserRouter>
+              <Routes>
+                <Route path="/login" element={<Login />} />
+                <Route path="/" element={withLayout(<CompanySelect />)} />
+                <Route path="/dashboard" element={withLayout(<Index />)} />
+                <Route path="/crm" element={withLayout(<CRM />)} />
+                <Route path="/clients" element={withLayout(<Clients />)} />
+                <Route path="/measurements" element={withLayout(<Measurements />)} />
+                <Route path="/control-measurements" element={withLayout(<ControlMeasurements />)} />
+                <Route path="/proposals" element={withLayout(<Proposals />)} />
+                <Route path="/orders" element={withLayout(<Orders />)} />
+                <Route path="/technology" element={withLayout(<Technology />)} />
+                <Route path="/supply" element={withLayout(<Supply />)} />
+                <Route path="/warehouse" element={withLayout(<Warehouse />)} />
+                <Route path="/production" element={withLayout(<Production />)} />
+                <Route path="/logistics" element={withLayout(<Logistics />)} />
+                <Route path="/installation" element={withLayout(<Installation />)} />
+                <Route path="/planner" element={withLayout(<Planner />)} />
+                <Route path="/marketing" element={withLayout(<Marketing />)} />
+                <Route path="/finance" element={withLayout(<Finance />)} />
+                <Route path="/reports" element={withLayout(<Reports />)} />
+                <Route path="/staff" element={withLayout(<Staff />)} />
+                <Route path="/settings" element={withLayout(<Settings />)} />
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </BrowserRouter>
+          </AuthProvider>
+        </ToastProvider>
+      </TooltipProvider>
+    </ThemeProvider>
   </QueryClientProvider>
 );
 

@@ -149,7 +149,7 @@ export const QuickCreateModal = ({ open, onClose }: QuickCreateModalProps) => {
     crit: 'border-[hsl(4,80%,50%)]/25 hover:border-[hsl(4,80%,60%)]/60 hover:bg-[hsl(4,80%,60%)]/5',
     info: 'border-[hsl(210,75%,50%)]/25 hover:border-[hsl(210,75%,55%)]/60 hover:bg-[hsl(210,75%,55%)]/5',
     gold: 'border-gold/25 hover:border-gold/60 hover:bg-gold/5',
-    muted: 'border-border hover:border-gold/30 hover:bg-[hsl(220,20%,16%)]',
+    muted: 'border-border hover:border-gold/30 hover:bg-hover-bg',
   };
   const toneIconCl: Record<string, string> = {
     ok:   'text-[hsl(142,55%,58%)] bg-[hsl(142,55%,48%)]/12',
@@ -157,7 +157,7 @@ export const QuickCreateModal = ({ open, onClose }: QuickCreateModalProps) => {
     crit: 'text-[hsl(4,80%,68%)] bg-[hsl(4,80%,60%)]/12',
     info: 'text-[hsl(210,75%,68%)] bg-[hsl(210,75%,55%)]/12',
     gold: 'text-gold bg-gold/12',
-    muted: 'text-[hsl(215,14%,55%)] bg-[hsl(220,18%,20%)]',
+    muted: 'text-muted-foreground bg-muted',
   };
 
   return (
@@ -167,14 +167,14 @@ export const QuickCreateModal = ({ open, onClose }: QuickCreateModalProps) => {
           <button
             key={a.label}
             onClick={() => { onClose(); success(a.toast, a.sub); }}
-            className={`flex flex-col items-center text-center p-4 rounded-xl bg-[hsl(220,22%,14%)] border transition-all duration-200 ${toneBorder[a.tone]}`}
+            className={`flex flex-col items-center text-center p-4 rounded-xl bg-secondary border transition-all duration-200 ${toneBorder[a.tone]}`}
             style={{ animation: `fade-in 0.4s ease-out ${i * 40}ms both` }}
           >
             <div className={`w-11 h-11 rounded-2xl flex items-center justify-center mb-3 ${toneIconCl[a.tone]}`}>
               <Icon name={a.icon} size={22} />
             </div>
-            <div className="font-semibold text-[13px] text-[hsl(210,20%,92%)] mb-0.5 leading-snug">{a.label}</div>
-            <div className="text-[11px] text-[hsl(215,14%,52%)] leading-snug">{a.sub}</div>
+            <div className="font-semibold text-[13px] text-foreground mb-0.5 leading-snug">{a.label}</div>
+            <div className="text-[11px] text-muted-foreground leading-snug">{a.sub}</div>
           </button>
         ))}
       </div>

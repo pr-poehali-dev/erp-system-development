@@ -32,6 +32,8 @@ export default {
 					warn: 'hsl(var(--status-warn))',
 					crit: 'hsl(var(--status-crit))',
 				},
+				'hover-bg': 'hsl(var(--hover-bg))',
+				'topbar-bg': 'hsl(var(--topbar-bg))',
 				border: 'hsl(var(--border))',
 				input: 'hsl(var(--input))',
 				ring: 'hsl(var(--ring))',

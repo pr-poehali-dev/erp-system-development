@@ -1,4 +1,7 @@
 {
+  "crm": "https://functions.poehali.dev/3599f7ba-d069-479f-8515-2c026187fb51",
+  "operations": "https://functions.poehali.dev/61b1d798-ebe4-44b4-a13c-069c34f00327",
+  "sales": "https://functions.poehali.dev/3328cb95-6374-4c78-a04a-d6b99d13577d",
   "auth": "https://functions.poehali.dev/f2da28a7-4445-4cc2-a2e6-523f6078afb7",
   "employees": "https://functions.poehali.dev/671560d1-dfd2-4333-bcc0-e8e7d9a4edae"
 }

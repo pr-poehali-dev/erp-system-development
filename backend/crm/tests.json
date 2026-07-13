@@ -1,0 +1,7 @@
+{
+  "tests": [
+    {"name": "OPTIONS preflight", "method": "OPTIONS", "path": "/", "expectedStatus": 200},
+    {"name": "List deals without auth", "method": "GET", "path": "/?resource=deals", "expectedStatus": 401},
+    {"name": "List clients without auth", "method": "GET", "path": "/?resource=clients", "expectedStatus": 401}
+  ]
+}

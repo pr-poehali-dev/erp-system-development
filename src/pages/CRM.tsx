@@ -1,90 +1,29 @@
-import { useState } from 'react';
+import { useState, useEffect, useCallback, FormEvent } from 'react';
 import Layout from '@/components/Layout';
 import Icon from '@/components/ui/icon';
 import Modal from '@/components/Modal';
 import { useToast } from '@/hooks/useToast';
+import { api, ApiError } from '@/lib/api';
 
-const tabs = ['Канбан', 'Список', 'Мои сделки', 'Аналитика'];
+const tabs = ['Канбан', 'Список', 'Аналитика'];
 
-type Deal = {
-  id: string; client: string; obj: string; sum: string; mgr: string; mgrInitials: string;
-  days: number; tag?: string; tagTone?: string; overdue?: boolean; task?: string;
-};
-type Column = { id: string; title: string; count: number; sum: string; color: string; deals: Deal[] };
+interface Stage {
+  id: number; slug: string; name: string; color: string; sortOrder?: number; sort_order?: number;
+}
+interface Deal {
+  id: number; clientId: number; clientName: string; stageId: number; stageSlug: string; stageName: string;
+  objectAddress?: string; sum: number | null; managerId?: number; managerName?: string;
+  companyId?: number; source?: string; tag?: string; taskNote?: string; isOverdue?: boolean;
+  comment?: string; daysInStage?: number;
+}
+interface DealDetail extends Deal {
+  clientPhone?: string; clientEmail?: string; objectType?: string;
+  tasks: { id: number; text: string; done: boolean; tone?: string }[];
+  history: { id: number; eventText: string; employeeName?: string; createdAt: string }[];
+}
+interface EmployeeOpt { id: number; firstName: string; lastName: string; roleSlug?: string; roleName: string; }
 
-const columns: Column[] = [
-  {
-    id: 'lead', title: 'Новый лид', count: 8, sum: '—', color: 'hsl(199 60% 50%)',
-    deals: [
-      { id: 'd1', client: 'Виктория Морозова', obj: 'Квартира, Симферополь', sum: '—', mgr: 'Иванова А.С.', mgrInitials: 'ИА', days: 0, tag: 'Сегодня', tagTone: 'info' },
-      { id: 'd2', client: 'Антон Гусев', obj: 'Дом, Симферополь', sum: '—', mgr: 'Петрова Е.В.', mgrInitials: 'ПЕ', days: 1, task: 'Перезвонить' },
-      { id: 'd3', client: 'Юлия Белова', obj: 'Офис, Симферополь', sum: '—', mgr: 'Смирнов П.А.', mgrInitials: 'СП', days: 2 },
-    ],
-  },
-  {
-    id: 'contact', title: 'Первый контакт', count: 6, sum: '3 240 000 ₽', color: 'hsl(280 40% 55%)',
-    deals: [
-      { id: 'd4', client: 'Дмитрий Орлов', obj: 'Квартира, Симферополь', sum: '850 000 ₽', mgr: 'Кузнецов Д.А.', mgrInitials: 'КД', days: 2, task: 'Назначить замер' },
-      { id: 'd5', client: 'Светлана Крылова', obj: 'Дом, Симферополь', sum: '1 200 000 ₽', mgr: 'Иванова А.С.', mgrInitials: 'ИА', days: 3 },
-      { id: 'd6', client: 'Роман Фёдоров', obj: 'Квартира, Симферополь', sum: '780 000 ₽', mgr: 'Петрова Е.В.', mgrInitials: 'ПЕ', days: 1 },
-    ],
-  },
-  {
-    id: 'measure', title: 'Замер назначен', count: 5, sum: '5 890 000 ₽', color: 'hsl(150 45% 45%)',
-    deals: [
-      { id: 'd7', client: 'Мария Петрова', obj: 'Квартира, ЖК «Парковый», Симферополь', sum: '1 245 000 ₽', mgr: 'Иванова А.С.', mgrInitials: 'ИА', days: 3, tag: '23 июн', tagTone: 'ok' },
-      { id: 'd8', client: 'Наталья Соколова', obj: 'Дом, Симферополь', sum: '2 100 000 ₽', mgr: 'Петрова Е.В.', mgrInitials: 'ПЕ', days: 4 },
-      { id: 'd9', client: 'Игорь Волков', obj: 'Офис, БЦ «Центральный», Симферополь', sum: '980 000 ₽', mgr: 'Кузнецов Д.А.', mgrInitials: 'КД', days: 5, task: 'Подготовить ТЗ' },
-    ],
-  },
-  {
-    id: 'kp', title: 'КП отправлено', count: 7, sum: '9 320 000 ₽', color: 'hsl(40 60% 55%)',
-    deals: [
-      { id: 'd10', client: 'Алексей Смирнов', obj: 'Квартира, ЖК «Фили Сити», Симферополь', sum: '950 000 ₽', mgr: 'Иванова А.С.', mgrInitials: 'ИА', days: 5, tag: 'КП-1246', tagTone: 'gold' },
-      { id: 'd11', client: 'Ольга Кузнецова', obj: 'Дом, Симферополь', sum: '2 460 000 ₽', mgr: 'Кузнецов Д.А.', mgrInitials: 'КД', days: 7, overdue: true, task: 'Напомнить' },
-      { id: 'd12', client: 'Максим Фролов', obj: 'Квартира, Симферополь', sum: '675 000 ₽', mgr: 'Петрова Е.В.', mgrInitials: 'ПЕ', days: 6 },
-    ],
-  },
-  {
-    id: 'agree', title: 'Согласование', count: 4, sum: '5 640 000 ₽', color: 'hsl(35 65% 52%)',
-    deals: [
-      { id: 'd13', client: 'Виктор Гаврилов', obj: 'Пентхаус, Симферополь', sum: '3 200 000 ₽', mgr: 'Иванова А.С.', mgrInitials: 'ИА', days: 8, tag: 'Высокий приоритет', tagTone: 'crit' },
-      { id: 'd14', client: 'Екатерина Лебедева', obj: 'Квартира, Симферополь', sum: '420 000 ₽', mgr: 'Смирнов П.А.', mgrInitials: 'СП', days: 6 },
-    ],
-  },
-  {
-    id: 'prepay', title: 'Предоплата', count: 3, sum: '4 215 000 ₽', color: 'hsl(28 70% 50%)',
-    deals: [
-      { id: 'd15', client: 'Сергей Павлов', obj: 'Коттедж, Симферополь', sum: '2 100 000 ₽', mgr: 'Петрова Е.В.', mgrInitials: 'ПЕ', days: 10, tag: 'В производстве', tagTone: 'ok' },
-      { id: 'd16', client: 'Анна Козлова', obj: 'Квартира, Симферополь', sum: '1 380 000 ₽', mgr: 'Иванова А.С.', mgrInitials: 'ИА', days: 9 },
-    ],
-  },
-  {
-    id: 'done', title: 'Закрыто / Выиграно', count: 12, sum: '14 890 000 ₽', color: 'hsl(150 50% 45%)',
-    deals: [
-      { id: 'd17', client: 'Владимир Соколов', obj: 'Дом, Симферополь', sum: '2 800 000 ₽', mgr: 'Кузнецов Д.А.', mgrInitials: 'КД', days: 14, tag: 'Закрыто', tagTone: 'ok' },
-      { id: 'd18', client: 'Ирина Новикова', obj: 'Квартира, Симферополь', sum: '980 000 ₽', mgr: 'Петрова Е.В.', mgrInitials: 'ПЕ', days: 12 },
-    ],
-  },
-];
-
-const detailDeal = {
-  id: '№1258', client: 'Мария Петрова', phone: '+7 (978) 123-45-67', email: 'maria.petrova@mail.ru',
-  obj: 'Квартира, ЖК «Парковый», Симферополь', type: 'Кухня и остров', budget: '1 245 000 ₽',
-  mgr: 'Иванова А.С.', source: 'Instagram', created: '20.06.2026', deadline: '21.07.2026',
-  stage: 'Замер назначен', comment: 'Хочет минималистичную кухню с островом и встроенной техникой. Любимые цвета: серый, дерево.',
-  tasks: [
-    { text: 'Замер — 23 июн 10:00', done: false, tone: 'warn' },
-    { text: 'Подготовить КП после замера', done: false },
-    { text: 'Отправить портфолио', done: true },
-    { text: 'Первый звонок', done: true },
-  ],
-  history: [
-    { date: '22.06.2026 14:20', text: 'Назначен замер на 23 июня 10:00', who: 'Иванова А.С.' },
-    { date: '21.06.2026 11:00', text: 'Отправлено портфолио на email', who: 'Иванова А.С.' },
-    { date: '20.06.2026 09:30', text: 'Сделка создана', who: 'Система' },
-  ],
-};
+const fmtSum = (v: number | null) => v ? `${v.toLocaleString('ru-RU')} ₽` : '—';
 
 const tagBg: Record<string, string> = {
   ok: 'bg-status-ok/15 text-status-ok',
@@ -94,38 +33,144 @@ const tagBg: Record<string, string> = {
   gold: 'bg-gold/15 text-gold',
 };
 
-const DealCard = ({ deal, onClick, isSelected }: { deal: Deal; onClick: () => void; isSelected: boolean }) => (
-  <div
-    onClick={onClick}
-    className={`rounded-xl p-3.5 mb-2 cursor-pointer transition-all border ${isSelected ? 'border-gold/50 bg-gold/8' : 'border-border bg-secondary hover:border-gold/30 hover:bg-secondary/80'}`}
-  >
-    <div className="font-semibold text-[13px] text-foreground mb-1">{deal.client}</div>
-    <div className="text-[11px] text-muted-foreground mb-2 truncate">{deal.obj}</div>
-    {deal.sum !== '—' && <div className="text-[13px] font-display font-bold text-gold mb-2">{deal.sum}</div>}
-    <div className="flex items-center justify-between">
-      <div className="flex items-center gap-1.5">
-        <div className="w-5 h-5 rounded-full bg-gold/20 flex items-center justify-center text-[9px] font-bold text-gold">{deal.mgrInitials}</div>
-        <span className="text-[11px] text-muted-foreground">{deal.days}д</span>
-      </div>
-      <div className="flex items-center gap-1">
-        {deal.tag && <span className={`text-[10px] px-1.5 py-0.5 rounded ${tagBg[deal.tagTone || 'ok']}`}>{deal.tag}</span>}
-        {deal.task && <span className="text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground">{deal.task}</span>}
-        {deal.overdue && <Icon name="Clock" size={13} className="text-status-crit" />}
+const DealCard = ({ deal, onClick }: { deal: Deal; onClick: () => void }) => {
+  const initials = deal.managerName ? deal.managerName.split(' ').map((s) => s[0]).join('').slice(0, 2).toUpperCase() : '?';
+  return (
+    <div
+      onClick={onClick}
+      className="rounded-xl p-3.5 mb-2 cursor-pointer transition-all border border-border bg-secondary hover:border-gold/30 hover:bg-secondary/80"
+    >
+      <div className="font-semibold text-[13px] text-foreground mb-1 truncate">{deal.clientName}</div>
+      <div className="text-[11px] text-muted-foreground mb-2 truncate">{deal.objectAddress || '—'}</div>
+      {deal.sum !== null && <div className="text-[13px] font-display font-bold text-gold mb-2">{fmtSum(deal.sum)}</div>}
+      <div className="flex items-center justify-between gap-1">
+        <div className="flex items-center gap-1.5 min-w-0">
+          <div className="w-5 h-5 rounded-full bg-gold/20 flex items-center justify-center text-[9px] font-bold text-gold shrink-0">{initials}</div>
+          <span className="text-[11px] text-muted-foreground shrink-0">{deal.daysInStage ?? 0}д</span>
+        </div>
+        <div className="flex items-center gap-1 min-w-0">
+          {deal.tag && <span className={`text-[10px] px-1.5 py-0.5 rounded shrink-0 ${tagBg.gold}`}>{deal.tag}</span>}
+          {deal.taskNote && <span className="text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground truncate">{deal.taskNote}</span>}
+          {deal.isOverdue && <Icon name="Clock" size={13} className="text-status-crit shrink-0" />}
+        </div>
       </div>
     </div>
-  </div>
-);
+  );
+};
+
+const emptyForm = { firstName: '', lastName: '', phone: '', itemType: '', source: '', objectAddress: '', managerId: '', comment: '' };
 
 const CRM = () => {
-  const { success, info } = useToast();
+  const { success, info, error: toastError } = useToast();
   const [activeTab, setActiveTab] = useState('Канбан');
-  const [selectedDeal, setSelectedDeal] = useState<string | null>('d7');
-  const [showDetail, setShowDetail] = useState(true);
+  const [deals, setDeals] = useState<Deal[]>([]);
+  const [stages, setStages] = useState<Stage[]>([]);
+  const [employees, setEmployees] = useState<EmployeeOpt[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+
+  const [selectedDealId, setSelectedDealId] = useState<number | null>(null);
+  const [detail, setDetail] = useState<DealDetail | null>(null);
+  const [detailLoading, setDetailLoading] = useState(false);
+
   const [showNewDeal, setShowNewDeal] = useState(false);
+  const [form, setForm] = useState(emptyForm);
+  const [submitting, setSubmitting] = useState(false);
   const [showFilter, setShowFilter] = useState(false);
 
-  const allDeals = columns.flatMap((c) => c.deals);
-  const selDeal = allDeals.find((d) => d.id === selectedDeal);
+  const load = useCallback(async () => {
+    setLoading(true);
+    setLoadError(null);
+    try {
+      const data = await api<{ deals: Deal[]; stages: Stage[] }>('crm', { params: { resource: 'deals' } });
+      setDeals(data.deals);
+      setStages(data.stages);
+    } catch (e) {
+      setLoadError(e instanceof ApiError ? e.message : 'Не удалось загрузить сделки');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const loadEmployees = useCallback(async () => {
+    try {
+      const data = await api<{ employees: EmployeeOpt[] }>('employees');
+      setEmployees(data.employees.filter((e) => e.roleSlug === 'sales_manager' || e.roleSlug === 'owner' || e.roleSlug === 'admin'));
+    } catch {
+      // silent
+    }
+  }, []);
+
+  useEffect(() => { load(); loadEmployees(); }, [load, loadEmployees]);
+
+  const loadDetail = useCallback(async (id: number) => {
+    setDetailLoading(true);
+    try {
+      const data = await api<{ deal: DealDetail }>('crm', { params: { resource: 'deals', action: 'detail', id: String(id) } });
+      setDetail(data.deal);
+    } catch {
+      setDetail(null);
+    } finally {
+      setDetailLoading(false);
+    }
+  }, []);
+
+  const openDeal = (id: number) => {
+    setSelectedDealId(id);
+    loadDetail(id);
+  };
+
+  const columns = stages.map((st) => {
+    const stageDeals = deals.filter((d) => d.stageId === st.id);
+    const sum = stageDeals.reduce((acc, d) => acc + (d.sum || 0), 0);
+    return { stage: st, deals: stageDeals, sum };
+  });
+
+  const totalDeals = deals.length;
+
+  const handleCreateDeal = async (e: FormEvent) => {
+    e.preventDefault();
+    if (!form.firstName.trim() || !form.lastName.trim()) {
+      toastError('Укажите имя и фамилию клиента');
+      return;
+    }
+    setSubmitting(true);
+    try {
+      await api('crm', {
+        method: 'POST',
+        params: { resource: 'deals' },
+        body: {
+          firstName: form.firstName.trim(),
+          lastName: form.lastName.trim(),
+          phone: form.phone.trim() || undefined,
+          itemType: form.itemType.trim() || undefined,
+          source: form.source.trim() || undefined,
+          objectAddress: form.objectAddress.trim() || undefined,
+          managerId: form.managerId ? Number(form.managerId) : undefined,
+          comment: form.comment.trim() || undefined,
+        },
+      });
+      setShowNewDeal(false);
+      setForm(emptyForm);
+      success('Сделка создана', 'Лид добавлен в воронку продаж');
+      await load();
+    } catch (err) {
+      toastError('Не удалось создать сделку', err instanceof ApiError ? err.message : undefined);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleMoveStage = async (dealId: number, stageId: number) => {
+    try {
+      await api('crm', { method: 'POST', params: { resource: 'deals', action: 'move-stage' }, body: { id: dealId, stageId } });
+      success('Сделка перемещена');
+      await load();
+      if (selectedDealId === dealId) loadDetail(dealId);
+    } catch (err) {
+      toastError('Не удалось переместить сделку', err instanceof ApiError ? err.message : undefined);
+    }
+  };
 
   return (
     <Layout
@@ -133,7 +178,7 @@ const CRM = () => {
       titleIcon="Users"
       actions={
         <>
-          <button onClick={() => setShowNewDeal(true)} className="flex items-center gap-2 px-4 py-2.5 rounded-xl gold-gradient btn-gold text-background font-semibold text-sm shadow-lg shadow-gold/20">
+          <button onClick={() => setShowNewDeal(true)} className="flex items-center gap-2 px-4 py-2.5 rounded-xl gold-gradient btn-gold text-background font-semibold text-sm shadow-lg shadow-gold/20 whitespace-nowrap">
             <Icon name="Plus" size={17} /> <span className="hidden lg:inline">Новая сделка</span>
           </button>
           <button onClick={() => setShowFilter(true)} className="flex items-center gap-2 px-3.5 py-2.5 rounded-xl glass-card text-sm hover:border-gold/30 transition-all">
@@ -143,101 +188,92 @@ const CRM = () => {
       }
     >
       {/* Tabs */}
-      <div className="flex items-center gap-1 mb-5 border-b border-border">
+      <div className="flex items-center gap-1 mb-5 border-b border-border overflow-x-auto scrollbar-thin">
         {tabs.map((t) => (
-          <button key={t} onClick={() => setActiveTab(t)} className={`px-4 py-2.5 text-sm font-medium transition-colors relative ${activeTab === t ? 'text-gold' : 'text-muted-foreground hover:text-foreground'}`}>
+          <button key={t} onClick={() => setActiveTab(t)} className={`px-4 py-2.5 text-sm font-medium transition-colors relative whitespace-nowrap ${activeTab === t ? 'text-gold' : 'text-muted-foreground hover:text-foreground'}`}>
             {t}
             {activeTab === t && <div className="absolute bottom-0 left-0 right-0 h-0.5 gold-gradient rounded-full" />}
           </button>
         ))}
-        <div className="ml-auto flex items-center gap-3 text-sm text-muted-foreground pb-1">
-          <span>Всего: <b className="text-foreground">45</b> сделок</span>
-          <span>•</span>
-          <span>На сумму: <b className="text-gold">42 195 000 ₽</b></span>
+        <div className="ml-auto flex items-center gap-3 text-sm text-muted-foreground pb-1 shrink-0">
+          <span>Всего: <b className="text-foreground">{totalDeals}</b> сделок</span>
         </div>
       </div>
 
-      <div className={`grid gap-5 ${showDetail ? 'grid-cols-1 xl:grid-cols-[1fr_380px]' : 'grid-cols-1'}`}>
-        {/* Kanban board */}
-        <div>
-          <div className="flex gap-3 overflow-x-auto scrollbar-thin pb-3">
-            {columns.map((col) => (
-              <div key={col.id} className="shrink-0 w-[220px]">
-                <div className="flex items-center gap-2 mb-3 px-1">
-                  <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: col.color }} />
-                  <span className="text-[12px] font-semibold text-foreground">{col.title}</span>
-                  <span className="ml-auto text-[11px] px-1.5 py-0.5 rounded-md bg-muted text-muted-foreground">{col.count}</span>
-                </div>
-                {col.sum !== '—' && <div className="text-[11px] text-muted-foreground px-1 mb-2">{col.sum}</div>}
-                <div className="space-y-1">
-                  {col.deals.map((deal) => (
-                    <DealCard
-                      key={deal.id}
-                      deal={deal}
-                      onClick={() => { setSelectedDeal(deal.id); setShowDetail(true); }}
-                      isSelected={selectedDeal === deal.id}
-                    />
-                  ))}
-                </div>
-                <button className="w-full mt-2 py-2 rounded-xl border border-dashed border-border text-[12px] text-muted-foreground hover:border-gold/40 hover:text-gold transition-colors flex items-center justify-center gap-1">
-                  <Icon name="Plus" size={13} /> Добавить
-                </button>
-              </div>
-            ))}
-          </div>
+      {loadError && (
+        <div className="mb-5 px-4 py-3 rounded-xl bg-status-crit/10 border border-status-crit/25 flex items-center justify-between gap-3 flex-wrap">
+          <span className="text-[13px] text-status-crit">{loadError}</span>
+          <button onClick={load} className="text-[12px] text-gold hover:underline shrink-0">Повторить</button>
         </div>
+      )}
 
-        {/* Deal detail */}
-        {showDetail && selDeal && (
-          <div className="glass-card rounded-2xl p-5 animate-fade-in opacity-0 self-start sticky top-[85px]">
-            <div className="flex items-start justify-between mb-4">
-              <div>
-                <div className="flex items-center gap-2">
-                  <h2 className="font-display font-extrabold text-lg text-foreground">Сделка {detailDeal.id}</h2>
-                  <span className="text-[11px] px-2 py-0.5 rounded bg-status-ok/15 text-status-ok">{detailDeal.stage}</span>
-                </div>
-                <p className="text-[11px] text-muted-foreground mt-1">Создана {detailDeal.created}</p>
+      {loading ? (
+        <div className="flex items-center justify-center py-24">
+          <Icon name="Loader2" size={32} className="text-gold animate-spin" />
+        </div>
+      ) : (
+        <div className="flex gap-3 overflow-x-auto scrollbar-thin pb-3">
+          {columns.map(({ stage, deals: stageDeals, sum }) => (
+            <div key={stage.id} className="shrink-0 w-[220px]">
+              <div className="flex items-center gap-2 mb-3 px-1">
+                <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: stage.color }} />
+                <span className="text-[12px] font-semibold text-foreground truncate">{stage.name}</span>
+                <span className="ml-auto text-[11px] px-1.5 py-0.5 rounded-md bg-muted text-muted-foreground shrink-0">{stageDeals.length}</span>
               </div>
-              <button onClick={() => setShowDetail(false)} className="w-7 h-7 rounded-lg bg-muted flex items-center justify-center hover:bg-secondary transition-colors">
-                <Icon name="X" size={14} />
-              </button>
+              {sum > 0 && <div className="text-[11px] text-muted-foreground px-1 mb-2">{fmtSum(sum)}</div>}
+              <div className="space-y-1">
+                {stageDeals.map((deal) => (
+                  <DealCard key={deal.id} deal={deal} onClick={() => openDeal(deal.id)} />
+                ))}
+              </div>
             </div>
+          ))}
+        </div>
+      )}
 
-            {/* Tabs inside */}
-            <div className="flex gap-3 border-b border-border mb-4 text-[12px]">
-              {['Информация', 'Задачи', 'История'].map((t) => (
-                <button key={t} className="pb-2 text-gold border-b-2 border-gold font-medium first:border-b-2 [&:not(:first-child)]:border-transparent [&:not(:first-child)]:text-muted-foreground">{t}</button>
-              ))}
-            </div>
-
+      {/* ── Deal detail modal ── */}
+      <Modal
+        open={!!selectedDealId}
+        onClose={() => { setSelectedDealId(null); setDetail(null); }}
+        title={detail ? detail.clientName : 'Загрузка...'}
+        subtitle={detail?.objectAddress}
+        icon="Briefcase"
+        size="md"
+        badge={detail ? { label: detail.stageName, tone: 'ok' } : undefined}
+      >
+        {detailLoading || !detail ? (
+          <div className="flex items-center justify-center py-16"><Icon name="Loader2" size={24} className="text-gold animate-spin" /></div>
+        ) : (
+          <div className="space-y-4 pb-2">
             <div className="space-y-3 text-[13px]">
               {[
-                ['Клиент', detailDeal.client],
-                ['Телефон', detailDeal.phone],
-                ['Email', detailDeal.email],
-                ['Объект', detailDeal.obj],
-                ['Тип мебели', detailDeal.type],
-                ['Бюджет', detailDeal.budget],
-                ['Менеджер', detailDeal.mgr],
-                ['Источник', detailDeal.source],
-                ['Срок', detailDeal.deadline],
+                ['Телефон', detail.clientPhone || '—'],
+                ['Email', detail.clientEmail || '—'],
+                ['Тип', detail.objectType || '—'],
+                ['Сумма', fmtSum(detail.sum)],
+                ['Менеджер', detail.managerName || '—'],
+                ['Источник', detail.source || '—'],
               ].map(([l, v]) => (
                 <div key={l} className="flex gap-3">
-                  <span className="text-muted-foreground w-24 shrink-0">{l}</span>
-                  <span className="text-foreground font-medium">{v}</span>
+                  <span className="text-muted-foreground w-20 shrink-0">{l}</span>
+                  <span className="text-foreground font-medium truncate">{v}</span>
                 </div>
               ))}
+            </div>
 
-              <div className="pt-2">
-                <div className="text-muted-foreground mb-1">Комментарий</div>
-                <div className="text-foreground text-[12px] bg-secondary rounded-xl p-3 leading-relaxed">{detailDeal.comment}</div>
+            {detail.comment && (
+              <div>
+                <div className="text-muted-foreground text-[13px] mb-1">Комментарий</div>
+                <div className="text-foreground text-[12px] bg-secondary rounded-xl p-3 leading-relaxed">{detail.comment}</div>
               </div>
+            )}
 
-              <div className="pt-1">
-                <div className="text-muted-foreground mb-2">Задачи</div>
+            {detail.tasks.length > 0 && (
+              <div>
+                <div className="text-muted-foreground text-[13px] mb-2">Задачи</div>
                 <div className="space-y-2">
-                  {detailDeal.tasks.map((t) => (
-                    <div key={t.text} className={`flex items-center gap-2.5 text-[12px] ${t.done ? 'opacity-50' : ''}`}>
+                  {detail.tasks.map((t) => (
+                    <div key={t.id} className={`flex items-center gap-2.5 text-[12px] ${t.done ? 'opacity-50' : ''}`}>
                       <div className={`w-4 h-4 rounded flex items-center justify-center border shrink-0 ${t.done ? 'bg-status-ok border-status-ok' : 'border-border'}`}>
                         {t.done && <Icon name="Check" size={10} className="text-white" />}
                       </div>
@@ -246,105 +282,88 @@ const CRM = () => {
                   ))}
                 </div>
               </div>
+            )}
 
-              <div className="pt-1">
-                <div className="text-muted-foreground mb-2">История</div>
-                <div className="space-y-2.5">
-                  {detailDeal.history.map((h) => (
-                    <div key={h.date} className="flex gap-3">
-                      <div className="w-1 rounded-full bg-gold/30 shrink-0" />
-                      <div>
-                        <div className="text-[11px] text-muted-foreground">{h.date} · {h.who}</div>
-                        <div className="text-[12px] text-foreground">{h.text}</div>
-                      </div>
+            <div>
+              <div className="text-muted-foreground text-[13px] mb-2">История</div>
+              <div className="space-y-2.5 max-h-40 overflow-y-auto scrollbar-thin">
+                {detail.history.map((h) => (
+                  <div key={h.id} className="flex gap-3">
+                    <div className="w-1 rounded-full bg-gold/30 shrink-0" />
+                    <div className="min-w-0">
+                      <div className="text-[11px] text-muted-foreground">{new Date(h.createdAt).toLocaleString('ru-RU')} {h.employeeName ? `· ${h.employeeName}` : ''}</div>
+                      <div className="text-[12px] text-foreground">{h.eventText}</div>
                     </div>
-                  ))}
-                </div>
+                  </div>
+                ))}
               </div>
             </div>
 
-            <div className="flex gap-2 mt-5 pt-4 border-t border-border">
-              <button className="flex-1 py-2.5 rounded-xl gold-gradient text-background font-semibold text-sm flex items-center justify-center gap-2">
-                <Icon name="Pencil" size={15} /> Редактировать
-              </button>
-              <button className="px-4 py-2.5 rounded-xl bg-secondary border border-border text-sm hover:border-gold/30 transition-colors">
-                <Icon name="Phone" size={15} />
-              </button>
-              <button className="px-4 py-2.5 rounded-xl bg-secondary border border-border text-sm hover:border-gold/30 transition-colors">
-                <Icon name="FileText" size={15} />
-              </button>
+            <div className="pt-1">
+              <div className="text-muted-foreground mb-2 text-[13px]">Переместить на этап</div>
+              <div className="flex flex-wrap gap-1.5">
+                {stages.map((st) => (
+                  <button
+                    key={st.id}
+                    onClick={() => handleMoveStage(detail.id, st.id)}
+                    disabled={st.id === detail.stageId}
+                    className={`px-2.5 py-1.5 rounded-lg text-[11px] border transition-all ${st.id === detail.stageId ? 'gold-gradient text-background border-transparent font-semibold' : 'bg-secondary border-border text-muted-foreground hover:border-gold/30 hover:text-foreground'}`}
+                  >
+                    {st.name}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
         )}
-      </div>
-
-      {/* Stats row */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
-        {[
-          { label: 'Конверсия в замер', value: '62%', delta: '+4%', icon: 'TrendingUp', tone: 'ok' },
-          { label: 'Средний чек', value: '938 000 ₽', delta: '+12%', icon: 'CircleDollarSign', tone: 'gold' },
-          { label: 'Средний цикл', value: '18 дней', delta: '-2 дня', icon: 'Clock', tone: 'ok' },
-          { label: 'Просроченных', value: '3', delta: 'Требуют внимания', icon: 'AlertCircle', tone: 'crit' },
-        ].map((s) => (
-          <div key={s.label} className="glass-card rounded-2xl p-4 animate-fade-in opacity-0">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-xs text-muted-foreground">{s.label}</span>
-              <Icon name={s.icon} size={16} className={s.tone === 'crit' ? 'text-status-crit' : s.tone === 'ok' ? 'text-status-ok' : 'text-gold'} />
-            </div>
-            <div className="font-display font-extrabold text-2xl text-foreground">{s.value}</div>
-            <div className={`text-xs mt-1 ${s.tone === 'crit' ? 'text-status-crit' : 'text-status-ok'}`}>{s.delta}</div>
-          </div>
-        ))}
-      </div>
+      </Modal>
 
       {/* ── Новая сделка modal ── */}
       <Modal
         open={showNewDeal}
-        onClose={() => setShowNewDeal(false)}
+        onClose={() => { setShowNewDeal(false); setForm(emptyForm); }}
         title="Новая сделка"
         subtitle="Добавить лид в воронку продаж"
         icon="UserPlus"
         size="md"
-        footer={
-          <div className="flex gap-3">
-            <button onClick={() => { setShowNewDeal(false); success('Сделка создана', 'Лид добавлен в воронку продаж'); }} className="flex-1 py-3 rounded-xl gold-gradient btn-gold text-background font-semibold text-sm shadow-lg shadow-gold/20">
-              Создать сделку
-            </button>
-            <button onClick={() => setShowNewDeal(false)} className="px-5 py-3 rounded-xl bg-secondary border border-border text-sm hover:border-gold/30 transition-colors">
-              Отмена
-            </button>
-          </div>
-        }
       >
-        <div className="space-y-4 pb-2">
+        <form onSubmit={handleCreateDeal} className="space-y-4 pb-2">
           <div className="grid grid-cols-2 gap-4">
-            {[
-              { label: 'Имя клиента', placeholder: 'Иванова Мария А.', icon: 'User', full: true },
-              { label: 'Телефон', placeholder: '+7 (978) 000-00-00', icon: 'Phone' },
-              { label: 'Email', placeholder: 'client@mail.ru', icon: 'Mail' },
-            ].map((f) => (
-              <div key={f.label} className={f.full ? 'col-span-2' : ''}>
-                <label className="text-[11px] text-muted-foreground mb-1.5 block font-medium">{f.label}</label>
-                <div className="flex items-center gap-3 px-3.5 py-3 rounded-xl bg-secondary border border-border focus-within:border-gold/50 transition-colors">
-                  <Icon name={f.icon} size={15} className="text-gold shrink-0" />
-                  <input placeholder={f.placeholder} className="bg-transparent text-sm outline-none flex-1 text-foreground placeholder:text-muted-foreground/50" />
-                </div>
+            <div>
+              <label className="text-[11px] text-muted-foreground mb-1.5 block font-medium">Фамилия *</label>
+              <div className="flex items-center gap-3 px-3.5 py-3 rounded-xl bg-secondary border border-border focus-within:border-gold/50 transition-colors">
+                <Icon name="User" size={15} className="text-gold shrink-0" />
+                <input value={form.lastName} onChange={(e) => setForm({ ...form, lastName: e.target.value })} placeholder="Иванова" className="bg-transparent text-sm outline-none flex-1 text-foreground placeholder:text-muted-foreground/50 min-w-0" />
               </div>
-            ))}
+            </div>
+            <div>
+              <label className="text-[11px] text-muted-foreground mb-1.5 block font-medium">Имя *</label>
+              <div className="flex items-center gap-3 px-3.5 py-3 rounded-xl bg-secondary border border-border focus-within:border-gold/50 transition-colors">
+                <Icon name="User" size={15} className="text-gold shrink-0" />
+                <input value={form.firstName} onChange={(e) => setForm({ ...form, firstName: e.target.value })} placeholder="Мария" className="bg-transparent text-sm outline-none flex-1 text-foreground placeholder:text-muted-foreground/50 min-w-0" />
+              </div>
+            </div>
+          </div>
+          <div>
+            <label className="text-[11px] text-muted-foreground mb-1.5 block font-medium">Телефон</label>
+            <div className="flex items-center gap-3 px-3.5 py-3 rounded-xl bg-secondary border border-border focus-within:border-gold/50 transition-colors">
+              <Icon name="Phone" size={15} className="text-gold shrink-0" />
+              <input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} placeholder="+7 (978) 000-00-00" className="bg-transparent text-sm outline-none flex-1 text-foreground placeholder:text-muted-foreground/50 min-w-0" />
+            </div>
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="text-[11px] text-muted-foreground mb-1.5 block font-medium">Тип мебели</label>
               <div className="flex items-center gap-3 px-3.5 py-3 rounded-xl bg-secondary border border-border focus-within:border-gold/50 transition-colors">
                 <Icon name="Sofa" size={15} className="text-gold shrink-0" />
-                <input placeholder="Кухня, гостиная..." className="bg-transparent text-sm outline-none flex-1 text-foreground placeholder:text-muted-foreground/50" />
+                <input value={form.itemType} onChange={(e) => setForm({ ...form, itemType: e.target.value })} placeholder="Кухня, гостиная..." className="bg-transparent text-sm outline-none flex-1 text-foreground placeholder:text-muted-foreground/50 min-w-0" />
               </div>
             </div>
             <div>
               <label className="text-[11px] text-muted-foreground mb-1.5 block font-medium">Источник</label>
               <div className="flex items-center gap-3 px-3.5 py-3 rounded-xl bg-secondary border border-border focus-within:border-gold/50 transition-colors">
                 <Icon name="Share2" size={15} className="text-gold shrink-0" />
-                <input placeholder="Instagram, ВК..." className="bg-transparent text-sm outline-none flex-1 text-foreground placeholder:text-muted-foreground/50" />
+                <input value={form.source} onChange={(e) => setForm({ ...form, source: e.target.value })} placeholder="Instagram, ВК..." className="bg-transparent text-sm outline-none flex-1 text-foreground placeholder:text-muted-foreground/50 min-w-0" />
               </div>
             </div>
           </div>
@@ -352,23 +371,39 @@ const CRM = () => {
             <label className="text-[11px] text-muted-foreground mb-1.5 block font-medium">Объект / Адрес</label>
             <div className="flex items-center gap-3 px-3.5 py-3 rounded-xl bg-secondary border border-border focus-within:border-gold/50 transition-colors">
               <Icon name="MapPin" size={15} className="text-gold shrink-0" />
-              <input placeholder="Симферополь, ЖК «Парковый», кв. 45" className="bg-transparent text-sm outline-none flex-1 text-foreground placeholder:text-muted-foreground/50" />
+              <input value={form.objectAddress} onChange={(e) => setForm({ ...form, objectAddress: e.target.value })} placeholder="Симферополь, ЖК «Парковый», кв. 45" className="bg-transparent text-sm outline-none flex-1 text-foreground placeholder:text-muted-foreground/50 min-w-0" />
             </div>
           </div>
           <div>
             <label className="text-[11px] text-muted-foreground mb-1.5 block font-medium">Менеджер</label>
-            <div className="flex gap-2">
-              {['Иванова А.С.', 'Петрова Е.В.', 'Кузнецов Д.А.', 'Смирнов П.А.'].map((m) => (
-                <button key={m} className="flex-1 py-2 rounded-lg bg-secondary border border-border text-[11px] text-muted-foreground hover:border-gold/40 hover:text-gold transition-all">{m}</button>
+            <div className="flex gap-2 flex-wrap">
+              {employees.map((m) => (
+                <button
+                  type="button"
+                  key={m.id}
+                  onClick={() => setForm({ ...form, managerId: String(m.id) })}
+                  className={`px-3 py-1.5 rounded-lg text-[11px] border transition-all ${form.managerId === String(m.id) ? 'gold-gradient text-background border-transparent font-semibold' : 'bg-secondary border-border text-muted-foreground hover:border-gold/40 hover:text-gold'}`}
+                >
+                  {m.firstName} {m.lastName[0]}.
+                </button>
               ))}
             </div>
           </div>
           <div>
             <label className="text-[11px] text-muted-foreground mb-1.5 block font-medium">Комментарий</label>
-            <textarea placeholder="Что хочет клиент, пожелания по стилю..." rows={3}
+            <textarea value={form.comment} onChange={(e) => setForm({ ...form, comment: e.target.value })} placeholder="Что хочет клиент, пожелания по стилю..." rows={3}
               className="w-full px-3.5 py-3 rounded-xl bg-secondary border border-border focus:border-gold/50 transition-colors text-sm outline-none text-foreground placeholder:text-muted-foreground/50 resize-none" />
           </div>
-        </div>
+          <div className="flex gap-3 pt-1">
+            <button type="submit" disabled={submitting} className="flex-1 py-3 rounded-xl gold-gradient btn-gold text-background font-semibold text-sm shadow-lg shadow-gold/20 disabled:opacity-60 flex items-center justify-center gap-2">
+              {submitting ? <Icon name="Loader2" size={16} className="animate-spin" /> : <Icon name="UserPlus" size={16} />}
+              Создать сделку
+            </button>
+            <button type="button" onClick={() => { setShowNewDeal(false); setForm(emptyForm); }} className="px-5 py-3 rounded-xl bg-secondary border border-border text-sm hover:border-gold/30 transition-colors">
+              Отмена
+            </button>
+          </div>
+        </form>
       </Modal>
 
       {/* ── Фильтры modal ── */}
@@ -386,28 +421,24 @@ const CRM = () => {
         }
       >
         <div className="space-y-4 pb-2">
-          {[
-            { label: 'Менеджер', options: ['Все', 'Иванова А.С.', 'Петрова Е.В.', 'Кузнецов Д.А.'] },
-            { label: 'Этап воронки', options: ['Все', 'Новый лид', 'Первый контакт', 'Замер назначен', 'КП отправлено'] },
-            { label: 'Компания', options: ['Все', 'Территория Мебели', 'Контур+'] },
-          ].map((f) => (
-            <div key={f.label}>
-              <label className="text-[11px] text-muted-foreground mb-2 block font-medium">{f.label}</label>
-              <div className="flex flex-wrap gap-2">
-                {f.options.map((opt, i) => (
-                  <button key={opt} className={`px-3 py-1.5 rounded-lg text-[12px] transition-all ${i === 0 ? 'gold-gradient text-background font-semibold' : 'bg-secondary border border-border text-muted-foreground hover:border-gold/30 hover:text-foreground'}`}>
-                    {opt}
-                  </button>
-                ))}
-              </div>
-            </div>
-          ))}
           <div>
-            <label className="text-[11px] text-muted-foreground mb-2 block font-medium">Сумма сделки</label>
-            <div className="flex items-center gap-3">
-              <input placeholder="от" className="flex-1 px-3.5 py-2.5 rounded-xl bg-secondary border border-border text-sm outline-none focus:border-gold/50 transition-colors text-foreground placeholder:text-muted-foreground/50" />
-              <span className="text-muted-foreground">—</span>
-              <input placeholder="до" className="flex-1 px-3.5 py-2.5 rounded-xl bg-secondary border border-border text-sm outline-none focus:border-gold/50 transition-colors text-foreground placeholder:text-muted-foreground/50" />
+            <label className="text-[11px] text-muted-foreground mb-2 block font-medium">Менеджер</label>
+            <div className="flex flex-wrap gap-2">
+              {['Все', ...employees.map((e) => `${e.firstName} ${e.lastName[0]}.`)].map((opt, i) => (
+                <button key={opt} className={`px-3 py-1.5 rounded-lg text-[12px] transition-all ${i === 0 ? 'gold-gradient text-background font-semibold' : 'bg-secondary border border-border text-muted-foreground hover:border-gold/30 hover:text-foreground'}`}>
+                  {opt}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div>
+            <label className="text-[11px] text-muted-foreground mb-2 block font-medium">Этап воронки</label>
+            <div className="flex flex-wrap gap-2">
+              {['Все', ...stages.map((s) => s.name)].map((opt, i) => (
+                <button key={opt} className={`px-3 py-1.5 rounded-lg text-[12px] transition-all ${i === 0 ? 'gold-gradient text-background font-semibold' : 'bg-secondary border border-border text-muted-foreground hover:border-gold/30 hover:text-foreground'}`}>
+                  {opt}
+                </button>
+              ))}
             </div>
           </div>
         </div>

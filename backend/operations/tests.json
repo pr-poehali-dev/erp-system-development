@@ -1,0 +1,13 @@
+{
+  "tests": [
+    {"name": "OPTIONS preflight", "method": "OPTIONS", "path": "/", "expectedStatus": 200},
+    {"name": "List orders without auth", "method": "GET", "path": "/?resource=orders", "expectedStatus": 401},
+    {"name": "List tasks without auth", "method": "GET", "path": "/?resource=tasks", "expectedStatus": 401},
+    {"name": "Warehouse without auth", "method": "GET", "path": "/?resource=warehouse", "expectedStatus": 401},
+    {"name": "Supply without auth", "method": "GET", "path": "/?resource=supply", "expectedStatus": 401},
+    {"name": "Production without auth", "method": "GET", "path": "/?resource=production", "expectedStatus": 401},
+    {"name": "Logistics without auth", "method": "GET", "path": "/?resource=logistics", "expectedStatus": 401},
+    {"name": "Installations without auth", "method": "GET", "path": "/?resource=installations", "expectedStatus": 401},
+    {"name": "Checklist without auth", "method": "GET", "path": "/?resource=checklist", "expectedStatus": 401}
+  ]
+}

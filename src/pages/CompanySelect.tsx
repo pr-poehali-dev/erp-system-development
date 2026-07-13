@@ -1,6 +1,8 @@
 import { useNavigate } from 'react-router-dom';
 import Sidebar from '@/components/Sidebar';
 import Icon from '@/components/ui/icon';
+import { ThemeToggleButton } from '@/components/ThemeToggle';
+import { useAuth } from '@/hooks/useAuth';
 
 const KITCHEN_IMG = 'https://cdn.poehali.dev/projects/eef01eb5-7830-4400-a486-64829cb2d730/files/fc53bd98-1f9f-4fc1-b636-7d092eded23a.jpg';
 const LUX_IMG = 'https://cdn.poehali.dev/projects/eef01eb5-7830-4400-a486-64829cb2d730/files/d750c304-d8b7-4eb1-8c4b-82a7018f645f.jpg';
@@ -50,80 +52,84 @@ const summary = [
 
 const CompanySelect = () => {
   const navigate = useNavigate();
+  const { employee } = useAuth();
+  const initials = employee ? (employee.firstName[0] + (employee.lastName[0] || '')).toUpperCase() : '?';
+  const fullName = employee ? `${employee.firstName} ${employee.lastName}` : 'Гость';
 
   return (
-    <div className="flex min-h-screen bg-[hsl(40_15%_94%)]">
+    <div className="flex min-h-screen bg-background">
       <Sidebar />
       <main className="flex-1 min-w-0 flex flex-col">
-        <header className="flex items-center justify-between px-10 py-7">
+        <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 px-5 sm:px-10 py-6 sm:py-7">
           <div>
-            <h1 className="font-display font-black text-3xl text-[hsl(30_8%_12%)]">ВЫБЕРИТЕ КОМПАНИЮ</h1>
-            <p className="text-sm text-[hsl(30_6%_45%)] mt-1">Выберите компанию для работы в системе</p>
+            <h1 className="font-display font-black text-2xl sm:text-3xl text-foreground tracking-tight">Выберите компанию</h1>
+            <p className="text-sm text-muted-foreground mt-1">Выберите компанию для работы в системе</p>
           </div>
-          <div className="flex items-center gap-5">
-            <button className="flex items-center gap-2.5 px-5 py-3 rounded-xl bg-white border border-[hsl(40_15%_85%)] text-sm font-medium text-[hsl(30_8%_20%)] hover:border-gold/40 transition-colors">
-              <Icon name="LayoutGrid" size={18} />
+          <div className="flex items-center gap-3 sm:gap-5">
+            <button className="hidden md:flex items-center gap-2.5 px-4 py-2.5 rounded-xl glass-card text-sm font-medium text-foreground hover:border-gold/40 transition-colors">
+              <Icon name="LayoutGrid" size={17} />
               Показать обе компании
             </button>
-            <div className="h-8 w-px bg-[hsl(40_15%_82%)]" />
+            <ThemeToggleButton />
+            <div className="h-8 w-px bg-border hidden sm:block" />
             <div className="flex items-center gap-3">
-              <div className="w-11 h-11 rounded-full gold-gradient flex items-center justify-center text-background font-bold">А</div>
-              <div>
-                <div className="text-sm font-semibold text-[hsl(30_8%_15%)]">Александр</div>
-                <div className="text-xs text-[hsl(30_6%_45%)]">Собственник</div>
+              <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-full gold-gradient flex items-center justify-center text-[hsl(222_30%_8%)] font-bold shrink-0">{initials}</div>
+              <div className="hidden sm:block">
+                <div className="text-sm font-semibold text-foreground truncate max-w-[140px]">{fullName}</div>
+                <div className="text-xs text-muted-foreground">{employee?.roleName || 'Собственник'}</div>
               </div>
-              <Icon name="ChevronDown" size={16} className="text-[hsl(30_6%_45%)]" />
+              <Icon name="ChevronDown" size={16} className="text-muted-foreground hidden sm:block" />
             </div>
           </div>
         </header>
 
-        <div className="flex-1 px-10 pb-6">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-7">
+        <div className="flex-1 px-5 sm:px-10 pb-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 sm:gap-7">
             {companies.map((c, idx) => (
               <div
                 key={c.id}
-                className="relative rounded-3xl overflow-hidden bg-[hsl(30_9%_9%)] border border-[hsl(40_20%_30%/0.2)] card-hover animate-fade-in opacity-0 group"
+                className="relative rounded-3xl overflow-hidden glass-card card-hover animate-fade-in opacity-0 group"
                 style={{ animationDelay: `${idx * 120}ms` }}
               >
                 <div className="absolute inset-0">
-                  <img src={c.img} alt={c.name} className="w-full h-full object-cover opacity-40 group-hover:opacity-50 transition-opacity duration-500" />
-                  <div className="absolute inset-0 bg-gradient-to-r from-[hsl(30_9%_9%)] via-[hsl(30_9%_9%/0.92)] to-transparent" />
+                  <img src={c.img} alt={c.name} className="w-full h-full object-cover opacity-20 group-hover:opacity-30 transition-opacity duration-500" />
+                  <div className="absolute inset-0 bg-gradient-to-r from-card via-card/95 to-card/60" />
                 </div>
 
-                <div className="relative p-8">
+                <div className="relative p-6 sm:p-8">
                   <div className="flex items-center gap-4 mb-6">
-                    <div className="w-16 h-16 rounded-2xl border-2 border-gold/50 flex items-center justify-center font-display font-black text-2xl text-gold shrink-0">
+                    <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl border-2 border-gold/50 flex items-center justify-center font-display font-black text-xl sm:text-2xl text-gold shrink-0 bg-background/40">
                       {c.logo}
                     </div>
-                    <div>
-                      <div className="font-display font-black text-2xl text-foreground tracking-tight">{c.name}</div>
-                      <div className="text-[11px] tracking-widest text-gold/80 font-medium mt-0.5">{c.tagline}</div>
+                    <div className="min-w-0">
+                      <div className="font-display font-black text-xl sm:text-2xl text-foreground tracking-tight truncate">{c.name}</div>
+                      <div className="text-[10px] sm:text-[11px] tracking-widest text-gold/90 font-semibold mt-0.5 truncate">{c.tagline}</div>
                     </div>
                   </div>
 
-                  <div className="inline-block px-4 py-2 rounded-lg bg-gold/10 border border-gold/20 text-xs font-semibold tracking-wide text-gold mb-5">
+                  <div className="inline-block px-4 py-2 rounded-lg bg-gold/12 border border-gold/25 text-xs font-semibold tracking-wide text-gold mb-5">
                     {c.segment}
                   </div>
 
-                  <p className="text-[15px] text-foreground/85 mb-6 max-w-sm leading-relaxed">{c.desc}</p>
+                  <p className="text-[14px] sm:text-[15px] text-foreground/80 mb-6 max-w-sm leading-relaxed">{c.desc}</p>
 
-                  <div className="h-px bg-gradient-to-r from-gold/30 to-transparent mb-5" />
+                  <div className="h-px bg-gradient-to-r from-gold/40 to-transparent mb-5" />
 
                   <div className="space-y-3.5 mb-7">
                     {c.stats.map((s) => (
-                      <div key={s.label} className="flex items-center justify-between max-w-md">
-                        <span className="flex items-center gap-3 text-sm text-foreground/80">
-                          <Icon name={s.icon} size={17} className="text-gold/70" />
-                          {s.label}
+                      <div key={s.label} className="flex items-center justify-between max-w-md gap-3">
+                        <span className="flex items-center gap-3 text-sm text-foreground/75 min-w-0">
+                          <Icon name={s.icon} size={17} className="text-gold shrink-0" />
+                          <span className="truncate">{s.label}</span>
                         </span>
-                        <span className={`font-display font-bold ${s.crit ? 'text-status-crit' : 'text-foreground'}`}>{s.value}</span>
+                        <span className={`font-display font-bold shrink-0 ${s.crit ? 'text-status-crit' : 'text-foreground'}`}>{s.value}</span>
                       </div>
                     ))}
                   </div>
 
                   <button
                     onClick={() => navigate('/dashboard')}
-                    className="w-full max-w-md flex items-center justify-center gap-3 py-4 rounded-2xl gold-gradient text-background font-display font-bold text-base hover:opacity-90 transition-all shadow-lg shadow-gold/20 group/btn"
+                    className="w-full max-w-md flex items-center justify-center gap-3 py-3.5 sm:py-4 rounded-2xl gold-gradient btn-gold text-[hsl(222_30%_8%)] font-display font-bold text-sm sm:text-base shadow-lg shadow-gold/25 group/btn"
                   >
                     Перейти в {c.name.charAt(0) + c.name.slice(1).toLowerCase()}
                     <Icon name="ArrowRight" size={20} className="group-hover/btn:translate-x-1 transition-transform" />
@@ -133,21 +139,21 @@ const CompanySelect = () => {
             ))}
           </div>
 
-          <div className="mt-7 rounded-3xl bg-[hsl(30_9%_9%)] border border-[hsl(40_20%_30%/0.2)] p-7 animate-fade-in opacity-0" style={{ animationDelay: '300ms' }}>
-            <h3 className="font-display font-bold text-base tracking-wide text-gold mb-5">ОБЩАЯ ИНФОРМАЦИЯ ПО КОМПАНИЯМ</h3>
-            <div className="flex flex-wrap items-end gap-8 justify-between">
+          <div className="mt-5 sm:mt-7 rounded-3xl glass-card p-6 sm:p-7 animate-fade-in opacity-0" style={{ animationDelay: '300ms' }}>
+            <h3 className="font-display font-bold text-sm sm:text-base tracking-wide text-gold mb-5">Общая информация по компаниям</h3>
+            <div className="flex flex-wrap items-end gap-6 sm:gap-8 justify-between">
               {summary.map((s) => (
                 <div key={s.label} className="flex items-start gap-3">
-                  <Icon name={s.icon} size={18} className="text-gold/70 mt-1" />
+                  <Icon name={s.icon} size={18} className="text-gold mt-1 shrink-0" />
                   <div>
                     <div className="text-xs text-muted-foreground mb-1">{s.label}</div>
-                    <div className={`font-display font-extrabold text-2xl ${s.crit ? 'text-status-crit' : 'text-foreground'}`}>{s.value}</div>
+                    <div className={`font-display font-extrabold text-xl sm:text-2xl ${s.crit ? 'text-status-crit' : 'text-foreground'}`}>{s.value}</div>
                   </div>
                 </div>
               ))}
               <button
                 onClick={() => navigate('/dashboard')}
-                className="flex items-center gap-3 px-5 py-3.5 rounded-xl bg-secondary border border-gold/20 hover:border-gold/40 transition-colors"
+                className="flex items-center gap-3 px-5 py-3.5 rounded-xl bg-secondary border border-gold/25 hover:border-gold/50 transition-colors"
               >
                 <Icon name="BarChart3" size={18} className="text-gold" />
                 <span className="text-sm font-medium text-foreground text-left leading-tight">Открыть общий<br />дашборд</span>
@@ -156,8 +162,8 @@ const CompanySelect = () => {
           </div>
         </div>
 
-        <footer className="px-10 py-5 flex items-center justify-between text-xs text-[hsl(30_6%_50%)] border-t border-[hsl(40_15%_85%)]">
-          <span><b className="text-[hsl(30_8%_25%)]">Territory ERP</b> &nbsp;·&nbsp; Система управления мебельным производством</span>
+        <footer className="px-5 sm:px-10 py-5 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-muted-foreground border-t border-border">
+          <span><b className="text-foreground/70">Territory ERP</b> &nbsp;·&nbsp; Система управления мебельным производством</span>
           <span>info@неостандарт.рф &nbsp;·&nbsp; © 2026 Все права защищены</span>
         </footer>
       </main>

@@ -1,81 +1,149 @@
-import { useState } from 'react';
+import { useState, useEffect, useCallback, FormEvent } from 'react';
 import Layout from '@/components/Layout';
 import Icon from '@/components/ui/icon';
 import Modal from '@/components/Modal';
 import { useToast } from '@/hooks/useToast';
+import { api, ApiError } from '@/lib/api';
 
 const tabs = ['Все замеры', 'Первичные', 'Контрольные', 'Назначенные', 'Выполненные', 'Перенесенные', 'Отмененные'];
 
-const kpis = [
-  { label: 'Сегодня', value: '12', icon: 'CalendarCheck', c: 'ok' },
-  { label: 'На этой неделе', value: '28', icon: 'Calendar', c: 'gold' },
-  { label: 'Назначены', value: '6', icon: 'Clock', c: 'warn' },
-  { label: 'Выполнены', value: '20', icon: 'CheckCircle', c: 'ok' },
-  { label: 'Перенесены', value: '2', icon: 'RefreshCw', c: 'warn' },
-  { label: 'Отменены', value: '1', icon: 'XCircle', c: 'crit' },
-];
+interface MeasurementRow {
+  id: number; code: string; clientId: number; clientName: string; measureType: string;
+  objectType?: string; objectName?: string; address?: string; measureDate: string;
+  measureTime?: string; managerId?: number; managerName?: string; status: string;
+  resultNotes?: string;
+}
+interface ClientOpt { id: number; fullName: string; }
+interface EmployeeOpt { id: number; firstName: string; lastName: string; }
 
-type Meas = {
-  date: string; time: string; client: string; type: string; obj: string; addr: string;
-  measType: 'Первичный' | 'Контрольный'; mgr: string; mgrInitials: string;
-  status: string; statusTone: string; company: string; id: string;
-};
-
-const measurements: Meas[] = [
-  { id: 'Z-1258', date: '23.06.2026', time: '10:00', client: 'Мария Петрова', type: 'Квартира', obj: 'ЖК «Парковый», Симферополь', addr: 'ул. Набережная, 9, кв. 45', measType: 'Первичный', mgr: 'Иванова А.С.', mgrInitials: 'ИА', status: 'Выполнен', statusTone: 'ok', company: 'ТМ' },
-  { id: 'Z-1259', date: '23.06.2026', time: '15:00', client: 'Алексей Смирнов', type: 'Квартира', obj: 'ЖК «Центральный», Симферополь', addr: 'ул. Багратионовская, 5', measType: 'Первичный', mgr: 'Петрова Е.В.', mgrInitials: 'ПЕ', status: 'Назначен', statusTone: 'warn', company: 'ТМ' },
-  { id: 'Z-1260', date: '24.06.2026', time: '11:30', client: 'Ольга Кузнецова', type: 'Дом', obj: 'Симферопольский р-н', addr: 'ул. Рублевская, 12', measType: 'Первичный', mgr: 'Кузнецов Д.А.', mgrInitials: 'КД', status: 'Подтверждён', statusTone: 'info', company: 'ТМ' },
-  { id: 'Z-1261', date: '24.06.2026', time: '16:00', client: 'Игорь Волков', type: 'Офис', obj: 'БЦ «Крымский», Симферополь', addr: 'Башня «Империя», 12 эт.', measType: 'Контрольный', mgr: 'Иванова А.С.', mgrInitials: 'ИА', status: 'Назначен', statusTone: 'warn', company: 'ТМ' },
-  { id: 'Z-1262', date: '25.06.2026', time: '09:30', client: 'Дмитрий Орлов', type: 'Квартира', obj: 'ЖК «Крымская Ривьера»', addr: 'пр-т Победы, 37', measType: 'Первичный', mgr: 'Кузнецов Д.А.', mgrInitials: 'КД', status: 'Перенесён', statusTone: 'warn', company: 'ТМ' },
-  { id: 'Z-1263', date: '25.06.2026', time: '14:30', client: 'Наталья Соколова', type: 'Дом', obj: 'Симферопольский р-н', addr: 'ул. Новикова, 25', measType: 'Первичный', mgr: 'Иванова А.С.', mgrInitials: 'ИА', status: 'Выполнен', statusTone: 'ok', company: 'ТМ' },
-  { id: 'Z-1264', date: '26.06.2026', time: '12:00', client: 'Максим Фролов', type: 'Квартира', obj: 'ЖК «Сердце Крыма»', addr: 'наб. Салгирная, 34к2', measType: 'Контрольный', mgr: 'Петрова Е.В.', mgrInitials: 'ПЕ', status: 'Выполнен', statusTone: 'ok', company: 'ТМ' },
-  { id: 'Z-1265', date: '27.06.2026', time: '13:00', client: 'Антон Гусев', type: 'Квартира', obj: 'ЖК «Lucky», Симферополь', addr: 'ул. 2-я Звенигородская, 12', measType: 'Первичный', mgr: 'Иванова А.С.', mgrInitials: 'ИА', status: 'Отменён', statusTone: 'crit', company: 'ТМ' },
-];
-
-const detailMeas = measurements[0];
-
+const statusRu: Record<string, string> = { scheduled: 'Назначен', confirmed: 'Подтверждён', done: 'Выполнен', postponed: 'Перенесён', cancelled: 'Отменён' };
 const statusBg: Record<string, string> = {
-  ok: 'bg-status-ok/15 text-status-ok',
-  warn: 'bg-status-warn/15 text-status-warn',
-  crit: 'bg-status-crit/15 text-status-crit',
-  info: 'bg-[hsl(199_60%_50%)]/15 text-[hsl(199_60%_60%)]',
+  scheduled: 'bg-status-warn/15 text-status-warn',
+  confirmed: 'bg-[hsl(199_60%_50%)]/15 text-[hsl(199_60%_60%)]',
+  done: 'bg-status-ok/15 text-status-ok',
+  postponed: 'bg-status-warn/15 text-status-warn',
+  cancelled: 'bg-status-crit/15 text-status-crit',
 };
-const kpiColor: Record<string, string> = { ok: 'text-status-ok', gold: 'text-gold', warn: 'text-status-warn', crit: 'text-status-crit' };
+const measureTypeRu: Record<string, string> = { primary: 'Первичный', control: 'Контрольный' };
 
-const calDays = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
-const calDates = [
-  [null, null, null, null, null, null, 1],
-  [2, 3, 4, 5, 6, 7, 8],
-  [9, 10, 11, 12, 13, 14, 15],
-  [16, 17, 18, 19, 20, 21, 22],
-  [23, 24, 25, 26, 27, 28, 29],
-  [30, null, null, null, null, null, null],
-];
-const hasMeas = [23, 24, 25, 26, 27];
+const initialsOf = (name: string) => name.split(' ').filter(Boolean).slice(0, 2).map((s) => s[0]).join('').toUpperCase();
+
+const emptyForm = { clientId: '', measureType: 'primary', objectType: '', objectName: '', address: '', measureDate: '', measureTime: '10:00', managerId: '' };
 
 const Measurements = () => {
-  const { success } = useToast();
+  const { success, error: toastError } = useToast();
   const [activeTab, setActiveTab] = useState('Все замеры');
-  const [selected, setSelected] = useState('Z-1258');
-  const sel = measurements.find((m) => m.id === selected) || detailMeas;
+  const [items, setItems] = useState<MeasurementRow[]>([]);
+  const [clients, setClients] = useState<ClientOpt[]>([]);
+  const [employees, setEmployees] = useState<EmployeeOpt[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [selId, setSelId] = useState<number | null>(null);
   const [showNew, setShowNew] = useState(false);
+  const [form, setForm] = useState(emptyForm);
+  const [submitting, setSubmitting] = useState(false);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    setLoadError(null);
+    try {
+      const data = await api<{ measurements: MeasurementRow[] }>('sales', { params: { resource: 'measurements' } });
+      setItems(data.measurements);
+    } catch (e) {
+      setLoadError(e instanceof ApiError ? e.message : 'Не удалось загрузить замеры');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const loadRefs = useCallback(async () => {
+    try {
+      const [c, e] = await Promise.all([
+        api<{ clients: ClientOpt[] }>('crm', { params: { resource: 'clients' } }),
+        api<{ employees: EmployeeOpt[] }>('employees'),
+      ]);
+      setClients(c.clients);
+      setEmployees(e.employees);
+    } catch {
+      // silent
+    }
+  }, []);
+
+  useEffect(() => { load(); loadRefs(); }, [load, loadRefs]);
+
+  const filtered = items.filter((m) => {
+    if (activeTab === 'Все замеры') return true;
+    if (activeTab === 'Первичные') return m.measureType === 'primary';
+    if (activeTab === 'Контрольные') return m.measureType === 'control';
+    if (activeTab === 'Назначенные') return m.status === 'scheduled';
+    if (activeTab === 'Выполненные') return m.status === 'done';
+    if (activeTab === 'Перенесенные') return m.status === 'postponed';
+    if (activeTab === 'Отмененные') return m.status === 'cancelled';
+    return true;
+  });
+
+  const sel = items.find((m) => m.id === selId);
+
+  const kpis = [
+    { label: 'Всего', value: items.length, icon: 'Calendar', c: 'gold' },
+    { label: 'Назначены', value: items.filter((m) => m.status === 'scheduled').length, icon: 'Clock', c: 'warn' },
+    { label: 'Выполнены', value: items.filter((m) => m.status === 'done').length, icon: 'CheckCircle', c: 'ok' },
+    { label: 'Перенесены', value: items.filter((m) => m.status === 'postponed').length, icon: 'RefreshCw', c: 'warn' },
+    { label: 'Отменены', value: items.filter((m) => m.status === 'cancelled').length, icon: 'XCircle', c: 'crit' },
+    { label: 'Контрольные', value: items.filter((m) => m.measureType === 'control').length, icon: 'ClipboardCheck', c: 'gold' },
+  ];
+  const kpiColor: Record<string, string> = { ok: 'text-status-ok', gold: 'text-gold', warn: 'text-status-warn', crit: 'text-status-crit' };
+
+  const handleSubmit = async (e: FormEvent) => {
+    e.preventDefault();
+    if (!form.clientId || !form.measureDate) {
+      toastError('Укажите клиента и дату замера');
+      return;
+    }
+    setSubmitting(true);
+    try {
+      await api('sales', {
+        method: 'POST',
+        params: { resource: 'measurements' },
+        body: {
+          clientId: Number(form.clientId), measureType: form.measureType,
+          objectType: form.objectType.trim() || undefined, objectName: form.objectName.trim() || undefined,
+          address: form.address.trim() || undefined, measureDate: form.measureDate,
+          measureTime: form.measureTime, managerId: form.managerId ? Number(form.managerId) : undefined,
+        },
+      });
+      setShowNew(false);
+      setForm(emptyForm);
+      success('Замер назначен', 'Менеджер получил уведомление');
+      await load();
+    } catch (err) {
+      toastError('Не удалось назначить замер', err instanceof ApiError ? err.message : undefined);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleStatusChange = async (status: string) => {
+    if (!sel) return;
+    try {
+      await api('sales', { method: 'PUT', params: { resource: 'measurements' }, body: { id: sel.id, status } });
+      success('Статус обновлён');
+      await load();
+    } catch (err) {
+      toastError('Не удалось обновить статус', err instanceof ApiError ? err.message : undefined);
+    }
+  };
 
   return (
     <Layout
       title="Замеры"
       titleIcon="Ruler"
       actions={
-        <>
-          <button onClick={() => setShowNew(true)} className="flex items-center gap-2 px-4 py-2.5 rounded-xl gold-gradient btn-gold text-background font-semibold text-sm shadow-lg shadow-gold/20">
-            <Icon name="Plus" size={17} /> Новый замер
-          </button>
-          <button className="flex items-center gap-2 px-3.5 py-2.5 rounded-xl glass-card text-sm hover:border-gold/30 transition-all">
-            <Icon name="Download" size={16} /> Экспорт
-          </button>
-        </>
+        <button onClick={() => setShowNew(true)} className="flex items-center gap-2 px-4 py-2.5 rounded-xl gold-gradient btn-gold text-background font-semibold text-sm shadow-lg shadow-gold/20 whitespace-nowrap">
+          <Icon name="Plus" size={17} /> <span className="hidden sm:inline">Новый замер</span>
+        </button>
       }
     >
-      {/* KPI row */}
       <div className="grid grid-cols-3 md:grid-cols-6 gap-3 mb-5">
         {kpis.map((k, i) => (
           <div key={k.label} className="glass-card rounded-2xl p-4 animate-fade-in opacity-0 text-center" style={{ animationDelay: `${i * 50}ms` }}>
@@ -86,7 +154,6 @@ const Measurements = () => {
         ))}
       </div>
 
-      {/* Tabs */}
       <div className="flex items-center gap-1 mb-5 border-b border-border overflow-x-auto scrollbar-thin">
         {tabs.map((t) => (
           <button key={t} onClick={() => setActiveTab(t)} className={`px-4 py-2.5 text-sm font-medium whitespace-nowrap transition-colors relative ${activeTab === t ? 'text-gold' : 'text-muted-foreground hover:text-foreground'}`}>
@@ -96,326 +163,195 @@ const Measurements = () => {
         ))}
       </div>
 
-      <div className="grid grid-cols-1 xl:grid-cols-[1fr_380px] gap-5">
-        {/* Table */}
-        <div className="space-y-5">
-          <div className="glass-card rounded-2xl p-4 animate-fade-in opacity-0">
-            <div className="flex items-center gap-3 mb-4 flex-wrap">
-              <div className="flex items-center gap-2 flex-1 min-w-[200px] px-3.5 py-2.5 rounded-xl bg-secondary">
-                <Icon name="Search" size={15} className="text-muted-foreground" />
-                <input placeholder="Поиск по клиенту, адресу, объекту..." className="bg-transparent text-sm outline-none flex-1 text-foreground placeholder:text-muted-foreground" />
-              </div>
-              {['Тип замера', 'Менеджер', 'Статус', 'Дата', 'Компания'].map((f) => (
-                <button key={f} className="flex items-center gap-1.5 px-3 py-2.5 rounded-xl bg-secondary text-[12px] text-muted-foreground hover:text-foreground">
-                  {f} <Icon name="ChevronDown" size={13} />
-                </button>
-              ))}
-              <button className="flex items-center gap-1.5 px-3 py-2.5 rounded-xl bg-secondary text-[12px] text-gold">
-                <Icon name="SlidersHorizontal" size={13} /> Фильтры
-              </button>
-            </div>
+      {loadError && (
+        <div className="mb-5 px-4 py-3 rounded-xl bg-status-crit/10 border border-status-crit/25 flex items-center justify-between gap-3 flex-wrap">
+          <span className="text-[13px] text-status-crit">{loadError}</span>
+          <button onClick={load} className="text-[12px] text-gold hover:underline shrink-0">Повторить</button>
+        </div>
+      )}
 
-            <div className="overflow-x-auto scrollbar-thin">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="text-[11px] text-muted-foreground text-left border-b border-border">
-                    <th className="font-medium pb-2 pr-3">Дата и время</th>
-                    <th className="font-medium pb-2 pr-3">Клиент / Объект</th>
-                    <th className="font-medium pb-2 pr-3">Тип замера</th>
-                    <th className="font-medium pb-2 pr-3">Менеджер</th>
-                    <th className="font-medium pb-2 pr-3">Статус</th>
-                    <th className="font-medium pb-2 pr-2">Компания</th>
-                    <th className="font-medium pb-2"></th>
+      <div className="glass-card rounded-2xl p-4 animate-fade-in opacity-0 min-w-0">
+        {loading ? (
+          <div className="flex items-center justify-center py-16"><Icon name="Loader2" size={28} className="text-gold animate-spin" /></div>
+        ) : filtered.length === 0 ? (
+          <div className="text-center py-16 text-muted-foreground text-sm">Замеры не найдены</div>
+        ) : (
+          <div className="table-responsive">
+            <table className="w-full text-sm min-w-[650px]">
+              <thead>
+                <tr className="text-[11px] text-muted-foreground text-left border-b border-border">
+                  <th className="font-medium pb-2 pr-3">Дата и время</th>
+                  <th className="font-medium pb-2 pr-3">Клиент / Объект</th>
+                  <th className="font-medium pb-2 pr-3">Тип</th>
+                  <th className="font-medium pb-2 pr-3">Менеджер</th>
+                  <th className="font-medium pb-2">Статус</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filtered.map((m) => (
+                  <tr key={m.id} onClick={() => setSelId(m.id)} className="border-b border-border/40 cursor-pointer transition-colors hover:bg-muted/30">
+                    <td className="py-3 pr-3">
+                      <div className="font-semibold text-foreground whitespace-nowrap">{new Date(m.measureDate).toLocaleDateString('ru-RU')}</div>
+                      <div className="text-[11px] text-muted-foreground">{m.measureTime?.slice(0, 5)}</div>
+                    </td>
+                    <td className="py-3 pr-3">
+                      <div className="text-foreground font-medium truncate max-w-[160px]">{m.clientName}</div>
+                      <div className="text-[11px] text-muted-foreground truncate max-w-[180px]">{m.objectName || m.objectType || m.address || '—'}</div>
+                    </td>
+                    <td className="py-3 pr-3">
+                      <span className={`text-[11px] px-2 py-1 rounded-md whitespace-nowrap ${m.measureType === 'control' ? 'bg-[hsl(199_60%_50%)]/15 text-[hsl(199_60%_60%)]' : 'bg-muted text-muted-foreground'}`}>{measureTypeRu[m.measureType]}</span>
+                    </td>
+                    <td className="py-3 pr-3">
+                      <div className="flex items-center gap-2">
+                        <div className="w-6 h-6 rounded-full bg-gold/15 flex items-center justify-center text-[9px] font-bold text-gold shrink-0">{m.managerName ? initialsOf(m.managerName) : '?'}</div>
+                        <span className="text-[12px] text-foreground truncate">{m.managerName || '—'}</span>
+                      </div>
+                    </td>
+                    <td className="py-3">
+                      <span className={`text-[11px] px-2 py-1 rounded-md whitespace-nowrap ${statusBg[m.status] || statusBg.scheduled}`}>{statusRu[m.status] || m.status}</span>
+                    </td>
                   </tr>
-                </thead>
-                <tbody>
-                  {measurements.map((m) => (
-                    <tr key={m.id} onClick={() => setSelected(m.id)} className={`border-b border-border/40 cursor-pointer transition-colors ${selected === m.id ? 'bg-gold/8' : 'hover:bg-muted/30'}`}>
-                      <td className="py-3 pr-3">
-                        <div className="font-semibold text-foreground">{m.date}</div>
-                        <div className="text-[11px] text-muted-foreground">{m.time}</div>
-                      </td>
-                      <td className="py-3 pr-3">
-                        <div className="text-foreground font-medium">{m.client}</div>
-                        <div className="text-[11px] text-muted-foreground truncate max-w-[180px]">{m.type} · <span className="text-gold/80 underline cursor-pointer">{m.addr}</span></div>
-                      </td>
-                      <td className="py-3 pr-3">
-                        <span className={`text-[11px] px-2 py-1 rounded-md ${m.measType === 'Контрольный' ? 'bg-[hsl(199_60%_50%)]/15 text-[hsl(199_60%_60%)]' : 'bg-muted text-muted-foreground'}`}>{m.measType}</span>
-                      </td>
-                      <td className="py-3 pr-3">
-                        <div className="flex items-center gap-2">
-                          <div className="w-6 h-6 rounded-full bg-gold/15 flex items-center justify-center text-[9px] font-bold text-gold shrink-0">{m.mgrInitials}</div>
-                          <span className="text-[12px] text-foreground">{m.mgr}</span>
-                        </div>
-                      </td>
-                      <td className="py-3 pr-3">
-                        <span className={`text-[11px] px-2 py-1 rounded-md whitespace-nowrap ${statusBg[m.statusTone]}`}>{m.status}</span>
-                      </td>
-                      <td className="py-3 pr-2">
-                        <div className="w-7 h-7 rounded-lg bg-gold/12 flex items-center justify-center text-[10px] font-bold text-gold">{m.company}</div>
-                      </td>
-                      <td className="py-3">
-                        <button className="w-7 h-7 rounded-lg bg-secondary flex items-center justify-center hover:bg-muted"><Icon name="MoreVertical" size={14} /></button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-
-            <div className="flex items-center justify-between mt-4 text-sm">
-              <span className="text-muted-foreground text-xs">Всего записей: 28</span>
-              <div className="flex items-center gap-1">
-                <button className="w-7 h-7 rounded-lg bg-secondary flex items-center justify-center"><Icon name="ChevronLeft" size={13} /></button>
-                {[1, 2, 3].map((n) => (
-                  <button key={n} className={`w-7 h-7 rounded-lg flex items-center justify-center text-xs ${n === 1 ? 'gold-gradient text-background font-semibold' : 'bg-secondary text-muted-foreground'}`}>{n}</button>
                 ))}
-                <span className="text-muted-foreground px-1">...</span>
-                <button className="w-7 h-7 rounded-lg bg-secondary text-xs text-muted-foreground flex items-center justify-center">3</button>
-                <button className="w-7 h-7 rounded-lg bg-secondary flex items-center justify-center"><Icon name="ChevronRight" size={13} /></button>
-              </div>
-            </div>
+              </tbody>
+            </table>
           </div>
-
-          {/* Map placeholder */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-            <div className="glass-card rounded-2xl p-4 animate-fade-in opacity-0">
-              <h3 className="font-display font-bold text-sm mb-3">Карта замеров на сегодня</h3>
-              <div className="rounded-xl overflow-hidden bg-[hsl(199_30%_15%)] h-44 relative">
-                <iframe
-                  src="https://yandex.ru/map-widget/v1/?ll=34.0960,44.9527&z=12&l=map&pt=34.0960,44.9527,pmgnl~34.1060,44.9427,pmrdl~34.0860,44.9627,pmrdl~34.1100,44.9500,pmbll"
-                  width="100%" height="100%" frameBorder="0" allowFullScreen
-                  className="opacity-90"
-                  title="Карта замеров Симферополь"
-                />
-                <div className="absolute bottom-2 left-2 flex items-center gap-3 bg-background/80 backdrop-blur-sm rounded-lg px-2.5 py-1.5 text-[10px]">
-                  <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-status-warn" />Назначены</span>
-                  <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-status-ok" />Выполнены</span>
-                  <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-[hsl(28_70%_50%)]" />Перенесены</span>
-                  <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-[hsl(280_40%_55%)]" />Контрольные</span>
-                </div>
-              </div>
-            </div>
-
-            <div className="glass-card rounded-2xl p-4 animate-fade-in opacity-0">
-              <div className="flex items-center justify-between mb-3">
-                <h3 className="font-display font-bold text-sm">Календарь замеров</h3>
-                <div className="flex items-center gap-2">
-                  <button className="w-6 h-6 rounded-lg bg-secondary flex items-center justify-center"><Icon name="ChevronLeft" size={13} /></button>
-                  <span className="text-[12px] font-medium">Июнь 2026</span>
-                  <button className="w-6 h-6 rounded-lg bg-secondary flex items-center justify-center"><Icon name="ChevronRight" size={13} /></button>
-                  <button className="text-[11px] px-2 py-1 rounded-lg bg-gold/15 text-gold">Сегодня</button>
-                </div>
-              </div>
-              <div className="grid grid-cols-7 gap-1 text-center text-[11px]">
-                {calDays.map((d) => <div key={d} className="text-muted-foreground pb-1 font-medium">{d}</div>)}
-                {calDates.flat().map((d, i) => (
-                  <div key={i} className={`h-8 flex items-center justify-center rounded-lg text-[12px] relative cursor-pointer transition-colors ${!d ? '' : hasMeas.includes(d) ? (d === 23 ? 'gold-gradient text-background font-bold' : 'bg-gold/12 text-gold font-medium hover:bg-gold/20') : 'hover:bg-muted text-muted-foreground'}`}>
-                    {d || ''}
-                    {d && hasMeas.includes(d) && d !== 23 && <span className="absolute -bottom-0.5 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-gold" />}
-                  </div>
-                ))}
-              </div>
-              <div className="mt-3 flex flex-wrap gap-2 text-[10px] text-muted-foreground">
-                <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-status-warn inline-block" />Назначены (6)</span>
-                <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-status-ok inline-block" />Выполнены (12)</span>
-                <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-[hsl(280_40%_55%)] inline-block" />Контрольные (4)</span>
-                <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-status-warn/60 inline-block" />Перенесены (2)</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Detail */}
-        <div className="glass-card rounded-2xl p-5 animate-fade-in opacity-0 self-start sticky top-[85px]" style={{ animationDelay: '80ms' }}>
-          <div className="flex items-start justify-between mb-4">
-            <div>
-              <h2 className="font-display font-extrabold text-lg text-foreground">Замер №{sel.id}</h2>
-              <div className="flex items-center gap-2 mt-1">
-                <Icon name="Calendar" size={13} className="text-gold" />
-                <span className="text-[11px] text-muted-foreground">{sel.date} в {sel.time}</span>
-                <span className="text-[11px] text-muted-foreground">·</span>
-                <span className="text-[11px] text-muted-foreground">{sel.measType} замер</span>
-              </div>
-            </div>
-            <span className={`text-[11px] px-2 py-1 rounded-md ${statusBg[sel.statusTone]}`}>{sel.status}</span>
-          </div>
-
-          <div className="flex gap-3 border-b border-border mb-4 text-[12px]">
-            {['Информация', 'Результаты', 'Чек-лист', 'Файлы', 'История'].map((t, i) => (
-              <button key={t} className={`pb-2 ${i === 0 ? 'text-gold border-b-2 border-gold font-medium' : 'text-muted-foreground'}`}>{t}</button>
-            ))}
-          </div>
-
-          <div className="grid grid-cols-2 gap-4 mb-4">
-            <div>
-              <div className="text-[11px] text-muted-foreground mb-1">Клиент</div>
-              <div className="text-[13px] font-semibold text-foreground">{sel.client}</div>
-            </div>
-            <div>
-              <div className="text-[11px] text-muted-foreground mb-1">Объект</div>
-              <div className="text-[13px] text-foreground">{sel.type}</div>
-            </div>
-            <div className="col-span-2">
-              <div className="text-[11px] text-muted-foreground mb-1">Адрес</div>
-              <div className="text-[13px] text-foreground">{sel.obj}, {sel.addr}</div>
-            </div>
-            <div>
-              <div className="text-[11px] text-muted-foreground mb-1">Тип мебели</div>
-              <div className="text-[13px] text-foreground">Кухня и остров</div>
-            </div>
-            <div>
-              <div className="text-[11px] text-muted-foreground mb-1">Менеджер</div>
-              <div className="text-[13px] text-foreground">{sel.mgr}</div>
-            </div>
-          </div>
-
-          <div className="mb-4">
-            <div className="text-[11px] text-muted-foreground mb-2">Контакты клиента</div>
-            <div className="flex items-center gap-2 text-[12px] text-foreground mb-1">
-              <Icon name="Phone" size={13} className="text-gold" /> +7 (978) 123-45-67
-            </div>
-            <div className="flex items-center gap-2 text-[12px] text-foreground">
-              <Icon name="Mail" size={13} className="text-gold" /> maria.petrova@mail.ru
-            </div>
-          </div>
-
-          <div className="mb-4">
-            <div className="text-[11px] text-muted-foreground mb-2">Комментарий клиента</div>
-            <div className="bg-secondary rounded-xl p-3 text-[12px] text-foreground leading-relaxed">
-              Хочет минималистичную кухню с островом и встроенной техникой. Любимые цвета: серый, дерево.
-            </div>
-          </div>
-
-          {/* Фото */}
-          <div className="mb-4">
-            <div className="flex items-center justify-between mb-2">
-              <div className="text-[11px] text-muted-foreground">Фото с объекта</div>
-              <button className="text-[11px] text-gold">Все фото (18)</button>
-            </div>
-            <div className="grid grid-cols-3 gap-1.5">
-              {[1, 2, 3, 4, 5, 6].map((n) => (
-                <div key={n} className="rounded-lg overflow-hidden bg-secondary h-16 flex items-center justify-center">
-                  <Icon name="Image" size={20} className="text-muted-foreground/40" />
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Файлы */}
-          <div className="mb-5">
-            <div className="flex items-center justify-between mb-2">
-              <div className="text-[11px] text-muted-foreground">Файлы</div>
-              <button className="text-[11px] text-gold">Все файлы (6)</button>
-            </div>
-            <div className="space-y-1.5">
-              {[
-                { name: 'План помещения.pdf', size: '1.2 МБ', date: '23.06.2026', icon: 'FileText', c: 'text-status-crit' },
-                { name: 'Фото_кухня.jpg', size: '4.3 МБ', date: '23.06.2026', icon: 'Image', c: 'text-status-ok' },
-                { name: 'Замеры помещения.xlsx', size: '330 КБ', date: '23.06.2026', icon: 'FileSpreadsheet', c: 'text-status-ok' },
-              ].map((f) => (
-                <div key={f.name} className="flex items-center gap-2.5 p-2 rounded-lg bg-secondary hover:bg-muted transition-colors cursor-pointer">
-                  <Icon name={f.icon} size={16} className={f.c} />
-                  <div className="flex-1 min-w-0">
-                    <div className="text-[12px] text-foreground truncate">{f.name}</div>
-                    <div className="text-[10px] text-muted-foreground">{f.date} · {f.size}</div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div className="flex gap-2">
-            <button className="flex-1 py-2.5 rounded-xl gold-gradient text-background font-semibold text-sm flex items-center justify-center gap-2">
-              <Icon name="Pencil" size={15} /> Редактировать
-            </button>
-            <button className="flex-1 py-2.5 rounded-xl border border-border bg-secondary text-sm font-medium text-foreground hover:border-gold/30 transition-colors flex items-center justify-center gap-2">
-              <Icon name="ClipboardCheck" size={15} /> Создать контрольный замер
-            </button>
-          </div>
-          <button className="w-full mt-2 py-2.5 rounded-xl border border-status-crit/30 text-status-crit text-sm hover:bg-status-crit/10 transition-colors">
-            Отменить замер
-          </button>
-        </div>
+        )}
       </div>
+
+      {/* ── Detail modal ── */}
+      <Modal
+        open={!!sel}
+        onClose={() => setSelId(null)}
+        title={sel ? `Замер ${sel.code}` : ''}
+        subtitle={sel ? `${new Date(sel.measureDate).toLocaleDateString('ru-RU')} в ${sel.measureTime?.slice(0, 5)} · ${measureTypeRu[sel.measureType]}` : ''}
+        icon="Ruler"
+        size="sm"
+        badge={sel ? { label: statusRu[sel.status] || sel.status, tone: sel.status === 'done' ? 'ok' : sel.status === 'cancelled' ? 'crit' : 'warn' } : undefined}
+      >
+        {sel && (
+          <div className="space-y-4 pb-2">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <div className="text-[11px] text-muted-foreground mb-1">Клиент</div>
+                <div className="text-[13px] font-semibold text-foreground truncate">{sel.clientName}</div>
+              </div>
+              <div>
+                <div className="text-[11px] text-muted-foreground mb-1">Объект</div>
+                <div className="text-[13px] text-foreground truncate">{sel.objectType || '—'}</div>
+              </div>
+              <div className="col-span-2">
+                <div className="text-[11px] text-muted-foreground mb-1">Адрес</div>
+                <div className="text-[13px] text-foreground">{sel.objectName ? `${sel.objectName}, ` : ''}{sel.address || '—'}</div>
+              </div>
+              <div className="col-span-2">
+                <div className="text-[11px] text-muted-foreground mb-1">Менеджер</div>
+                <div className="text-[13px] text-foreground">{sel.managerName || '—'}</div>
+              </div>
+            </div>
+
+            {sel.resultNotes && (
+              <div>
+                <div className="text-[11px] text-muted-foreground mb-2">Заметки</div>
+                <div className="bg-secondary rounded-xl p-3 text-[12px] text-foreground leading-relaxed">{sel.resultNotes}</div>
+              </div>
+            )}
+
+            <div className="flex gap-2 flex-wrap">
+              {sel.status !== 'done' && (
+                <button onClick={() => handleStatusChange('done')} className="flex-1 py-2.5 rounded-xl gold-gradient text-background font-semibold text-sm flex items-center justify-center gap-2 min-w-[130px]">
+                  <Icon name="CheckCircle" size={15} /> Выполнен
+                </button>
+              )}
+              {sel.status === 'scheduled' && (
+                <button onClick={() => handleStatusChange('confirmed')} className="flex-1 py-2.5 rounded-xl border border-border bg-secondary text-sm font-medium text-foreground hover:border-gold/30 transition-colors min-w-[130px]">
+                  Подтвердить
+                </button>
+              )}
+            </div>
+            {sel.status !== 'cancelled' && (
+              <button onClick={() => handleStatusChange('cancelled')} className="w-full py-2.5 rounded-xl border border-status-crit/30 text-status-crit text-sm hover:bg-status-crit/10 transition-colors">
+                Отменить замер
+              </button>
+            )}
+          </div>
+        )}
+      </Modal>
 
       {/* ── Новый замер modal ── */}
       <Modal
         open={showNew}
-        onClose={() => setShowNew(false)}
+        onClose={() => { setShowNew(false); setForm(emptyForm); }}
         title="Назначить замер"
         subtitle="Первичный или контрольный"
         icon="Ruler"
         size="md"
-        footer={
-          <div className="flex gap-3">
-            <button onClick={() => { setShowNew(false); success('Замер назначен', 'Менеджер получил уведомление'); }} className="flex-1 py-3 rounded-xl gold-gradient btn-gold text-background font-semibold text-sm shadow-lg shadow-gold/20">
-              Назначить замер
-            </button>
-            <button onClick={() => setShowNew(false)} className="px-5 py-3 rounded-xl bg-secondary border border-border text-sm hover:border-gold/30 transition-colors">
-              Отмена
-            </button>
-          </div>
-        }
       >
-        <div className="space-y-4 pb-2">
+        <form onSubmit={handleSubmit} className="space-y-4 pb-2">
           <div>
             <label className="text-[11px] text-muted-foreground mb-2 block font-medium">Тип замера</label>
             <div className="grid grid-cols-2 gap-3">
-              {[
-                { label: 'Первичный', icon: 'Ruler', sub: 'Первый визит к клиенту' },
-                { label: 'Контрольный', icon: 'ClipboardCheck', sub: 'Перед запуском в производство' },
-              ].map((t, i) => (
-                <button key={t.label} className={`p-3.5 rounded-xl text-left border transition-all ${i === 0 ? 'border-gold/40 bg-gold/8' : 'border-border bg-secondary hover:border-gold/25'}`}>
-                  <Icon name={t.icon} size={18} className={i === 0 ? 'text-gold mb-2' : 'text-muted-foreground mb-2'} />
-                  <div className={`text-[13px] font-semibold ${i === 0 ? 'text-gold' : 'text-foreground'}`}>{t.label}</div>
-                  <div className="text-[11px] text-muted-foreground mt-0.5">{t.sub}</div>
+              {[['primary', 'Ruler', 'Первичный', 'Первый визит к клиенту'], ['control', 'ClipboardCheck', 'Контрольный', 'Перед запуском в производство']].map(([v, ic, l, sub]) => (
+                <button type="button" key={v} onClick={() => setForm({ ...form, measureType: v })}
+                  className={`p-3.5 rounded-xl text-left border transition-all ${form.measureType === v ? 'border-gold/40 bg-gold/8' : 'border-border bg-secondary hover:border-gold/25'}`}>
+                  <Icon name={ic} size={18} className={form.measureType === v ? 'text-gold mb-2' : 'text-muted-foreground mb-2'} />
+                  <div className={`text-[13px] font-semibold ${form.measureType === v ? 'text-gold' : 'text-foreground'}`}>{l}</div>
+                  <div className="text-[11px] text-muted-foreground mt-0.5">{sub}</div>
                 </button>
               ))}
             </div>
           </div>
-          {[
-            { label: 'Клиент / Сделка', placeholder: 'Найти клиента...', icon: 'User' },
-            { label: 'Адрес объекта', placeholder: 'Симферополь, ЖК «Парковый», кв. 45', icon: 'MapPin' },
-          ].map((f) => (
-            <div key={f.label}>
-              <label className="text-[11px] text-muted-foreground mb-1.5 block font-medium">{f.label}</label>
-              <div className="flex items-center gap-3 px-3.5 py-3 rounded-xl bg-secondary border border-border focus-within:border-gold/50 transition-colors">
-                <Icon name={f.icon} size={15} className="text-gold shrink-0" />
-                <input placeholder={f.placeholder} className="bg-transparent text-sm outline-none flex-1 text-foreground placeholder:text-muted-foreground/50" />
-              </div>
+          <div>
+            <label className="text-[11px] text-muted-foreground mb-1.5 block font-medium">Клиент *</label>
+            <select value={form.clientId} onChange={(e) => setForm({ ...form, clientId: e.target.value })}
+              className="w-full px-3.5 py-3 rounded-xl bg-secondary border border-border text-sm outline-none focus:border-gold/50 transition-colors text-foreground">
+              <option value="">Выберите клиента...</option>
+              {clients.map((c) => <option key={c.id} value={c.id}>{c.fullName}</option>)}
+            </select>
+          </div>
+          <div>
+            <label className="text-[11px] text-muted-foreground mb-1.5 block font-medium">Адрес объекта</label>
+            <div className="flex items-center gap-3 px-3.5 py-3 rounded-xl bg-secondary border border-border focus-within:border-gold/50 transition-colors">
+              <Icon name="MapPin" size={15} className="text-gold shrink-0" />
+              <input value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} placeholder="Симферополь, ЖК «Парковый», кв. 45" className="bg-transparent text-sm outline-none flex-1 text-foreground placeholder:text-muted-foreground/50 min-w-0" />
             </div>
-          ))}
+          </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="text-[11px] text-muted-foreground mb-1.5 block font-medium">Дата</label>
+              <label className="text-[11px] text-muted-foreground mb-1.5 block font-medium">Дата *</label>
               <div className="flex items-center gap-3 px-3.5 py-3 rounded-xl bg-secondary border border-border focus-within:border-gold/50 transition-colors">
                 <Icon name="Calendar" size={15} className="text-gold shrink-0" />
-                <input type="date" className="bg-transparent text-sm outline-none flex-1 text-foreground" />
+                <input type="date" value={form.measureDate} onChange={(e) => setForm({ ...form, measureDate: e.target.value })} className="bg-transparent text-sm outline-none flex-1 text-foreground min-w-0" />
               </div>
             </div>
             <div>
               <label className="text-[11px] text-muted-foreground mb-1.5 block font-medium">Время</label>
               <div className="flex items-center gap-3 px-3.5 py-3 rounded-xl bg-secondary border border-border focus-within:border-gold/50 transition-colors">
                 <Icon name="Clock" size={15} className="text-gold shrink-0" />
-                <input type="time" defaultValue="10:00" className="bg-transparent text-sm outline-none flex-1 text-foreground" />
+                <input type="time" value={form.measureTime} onChange={(e) => setForm({ ...form, measureTime: e.target.value })} className="bg-transparent text-sm outline-none flex-1 text-foreground min-w-0" />
               </div>
             </div>
           </div>
           <div>
             <label className="text-[11px] text-muted-foreground mb-2 block font-medium">Замерщик / Менеджер</label>
             <div className="flex gap-2 flex-wrap">
-              {['Иванова А.С.', 'Петрова Е.В.', 'Кузнецов Д.А.', 'Смирнов П.А.'].map((m, i) => (
-                <button key={m} className={`px-3 py-2 rounded-xl text-[12px] border transition-all ${i === 0 ? 'gold-gradient text-background border-transparent font-semibold' : 'bg-secondary border-border text-muted-foreground hover:border-gold/30'}`}>{m}</button>
+              {employees.map((m) => (
+                <button type="button" key={m.id} onClick={() => setForm({ ...form, managerId: String(m.id) })}
+                  className={`px-3 py-2 rounded-xl text-[12px] border transition-all ${form.managerId === String(m.id) ? 'gold-gradient text-background border-transparent font-semibold' : 'bg-secondary border-border text-muted-foreground hover:border-gold/30'}`}>
+                  {m.firstName} {m.lastName[0]}.
+                </button>
               ))}
             </div>
           </div>
-          <div>
-            <label className="text-[11px] text-muted-foreground mb-1.5 block font-medium">Комментарий</label>
-            <textarea placeholder="Что нужно замерить, особые условия..." rows={2}
-              className="w-full px-3.5 py-3 rounded-xl bg-secondary border border-border focus:border-gold/50 transition-colors text-sm outline-none text-foreground placeholder:text-muted-foreground/50 resize-none" />
+          <div className="flex gap-3 pt-1">
+            <button type="submit" disabled={submitting} className="flex-1 py-3 rounded-xl gold-gradient btn-gold text-background font-semibold text-sm shadow-lg shadow-gold/20 disabled:opacity-60 flex items-center justify-center gap-2">
+              {submitting ? <Icon name="Loader2" size={16} className="animate-spin" /> : <Icon name="Ruler" size={16} />}
+              Назначить замер
+            </button>
+            <button type="button" onClick={() => { setShowNew(false); setForm(emptyForm); }} className="px-5 py-3 rounded-xl bg-secondary border border-border text-sm hover:border-gold/30 transition-colors">
+              Отмена
+            </button>
           </div>
-        </div>
+        </form>
       </Modal>
     </Layout>
   );

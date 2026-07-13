@@ -1,72 +1,173 @@
-import { useState } from 'react';
+import { useState, useEffect, useCallback, FormEvent } from 'react';
 import Layout from '@/components/Layout';
 import Icon from '@/components/ui/icon';
 import Modal from '@/components/Modal';
 import { useToast } from '@/hooks/useToast';
+import { api, ApiError } from '@/lib/api';
 
-const HERO_IMG = 'https://cdn.poehali.dev/projects/eef01eb5-7830-4400-a486-64829cb2d730/files/731403e6-0aba-4e1a-8599-1dee4329e054.jpg';
+const tabs = ['Все КП', 'Черновики', 'Отправленные', 'Согласуются', 'Принятые', 'Отклоненные'];
 
-const tabs = ['Все КП', 'Черновики', 'Отправленные', 'Согласуются', 'Принятые', 'Отклоненные', 'Требуют правки'];
+interface ProposalRow {
+  id: number; code: string; version: number; dealId?: number; clientId: number; clientName: string;
+  itemType?: string; companyId?: number; companyName?: string; sum: number; discount: number;
+  status: string; managerId?: number; managerName?: string; validDays?: number; comment?: string;
+  createdAt: string;
+}
+interface ProposalDetail extends ProposalRow {
+  items: { id: number; name: string; qty: number; unit: string; price: number; sum: number }[];
+}
+interface ClientOpt { id: number; fullName: string; }
+interface EmployeeOpt { id: number; firstName: string; lastName: string; }
+interface CompanyOpt { id: number; name: string; }
 
-const proposals = [
-  { id: 'КП-1258', ver: 'версия 2', client: 'Мария Петрова', deal: 'Сделка №1258', item: 'Кухня и остров', company: 'ТМ', sum: '1 850 000 ₽', status: 'Согласуется', tone: 'warn', date: '23.06.2026 14:20', mgr: 'Иванова А.С.' },
-  { id: 'КП-1246', ver: 'версия 1', client: 'Алексей Смирнов', deal: 'Сделка №1261', item: 'Гостиная и ТВ-зона', company: 'ТМ', sum: '950 000 ₽', status: 'Отправлено', tone: 'info', date: '22.06.2026 16:30', mgr: 'Иванова А.С.' },
-  { id: 'КП-1241', ver: 'версия 1', client: 'Наталья Соколова', deal: 'Сделка №1262', item: 'Кухня классика', company: 'ТМ', sum: '1 280 000 ₽', status: 'Черновик', tone: 'muted', date: '22.06.2026 11:20', mgr: 'Смирнов Д.А.' },
-  { id: 'КП-1235', ver: 'версия 3', client: 'Игорь Волков', deal: 'Сделка №1263', item: 'Прихожая', company: 'ТМ', sum: '380 000 ₽', status: 'Принято', tone: 'ok', date: '21.06.2026 17:00', mgr: 'Иванова А.С.' },
-  { id: 'КП-1232', ver: 'версия 1', client: 'Ольга Кузнецова', deal: 'Сделка №1262', item: 'Комплексный проект', company: 'ТМ', sum: '2 460 000 ₽', status: 'Отклонено', tone: 'crit', date: '21.06.2026 12:10', mgr: 'Кузнецов Д.А.' },
-  { id: 'КП-1228', ver: 'версия 2', client: 'Максим Фролов', deal: 'Сделка №1267', item: 'Кухня и остров', company: 'К+', sum: '675 000 ₽', status: 'Требует правки', tone: 'warn', date: '20.06.2026 15:40', mgr: 'Петрова Е.В.' },
-  { id: 'КП-1225', ver: 'версия 1', client: 'Екатерина Лебедева', deal: 'Сделка №1264', item: 'Шкафы и гардеробная', company: 'К+', sum: '420 000 ₽', status: 'Отправлено', tone: 'info', date: '20.06.2026 10:30', mgr: 'Петрова Е.В.' },
-  { id: 'КП-1220', ver: 'версия 1', client: 'Виктория Морозова', deal: 'Сделка №1268', item: 'Детская мебель', company: 'К+', sum: '310 000 ₽', status: 'Согласуется', tone: 'warn', date: '19.06.2026 16:45', mgr: 'Смирнов Д.А.' },
-  { id: 'КП-1215', ver: 'версия 1', client: 'Антон Гусев', deal: 'Сделка №1269', item: 'Кухня угловая', company: 'К+', sum: '520 000 ₽', status: 'Принято', tone: 'ok', date: '19.06.2026 14:10', mgr: 'Кузнецов Д.А.' },
-  { id: 'КП-1210', ver: 'версия 1', client: 'Юлия Белова', deal: 'Сделка №1270', item: 'Гардеробная', company: 'К+', sum: '260 000 ₽', status: 'Черновик', tone: 'muted', date: '18.06.2026 11:50', mgr: 'Петрова Е.В.' },
-];
-
-const composition = [
-  { n: 1, name: 'Кухонный гарнитур (нижние модули)', qty: '1', unit: 'компл.', price: '780 000 ₽', sum: '780 000 ₽' },
-  { n: 2, name: 'Кухонный гарнитур (верхние модули)', qty: '1', unit: 'компл.', price: '460 000 ₽', sum: '460 000 ₽' },
-  { n: 3, name: 'Остров кухонный с хранением', qty: '1', unit: 'шт.', price: '380 000 ₽', sum: '380 000 ₽' },
-  { n: 4, name: 'Столешница кварцевая 20 мм', qty: '6,5', unit: 'п.м.', price: '24 000 ₽', sum: '156 000 ₽' },
-  { n: 5, name: 'Бытовая техника (комплект)', qty: '1', unit: 'компл.', price: '270 000 ₽', sum: '270 000 ₽' },
-];
-
-const approval = [
-  { title: 'Создано', sub: '23.05.2024, 14:20\nИванова А.С.', done: true },
-  { title: 'Отправлено клиенту', sub: '23.05.2024, 15:00\nИванова А.С.', done: true },
-  { title: 'Ожидает согласования клиента', sub: '—', active: true },
-  { title: 'Принято клиентом', sub: '—' },
-  { title: 'Заказ создан', sub: '—' },
-];
-
+const statusRu: Record<string, string> = { draft: 'Черновик', sent: 'Отправлено', agreement: 'Согласуется', accepted: 'Принято', rejected: 'Отклонено', revision: 'Требует правки' };
 const statusBg: Record<string, string> = {
-  ok: 'bg-status-ok/15 text-status-ok',
-  warn: 'bg-status-warn/15 text-status-warn',
-  crit: 'bg-status-crit/15 text-status-crit',
-  info: 'bg-[hsl(199_60%_50%)]/15 text-[hsl(199_60%_60%)]',
-  muted: 'bg-muted text-muted-foreground',
+  draft: 'bg-muted text-muted-foreground',
+  sent: 'bg-[hsl(199_60%_50%)]/15 text-[hsl(199_60%_60%)]',
+  agreement: 'bg-status-warn/15 text-status-warn',
+  accepted: 'bg-status-ok/15 text-status-ok',
+  rejected: 'bg-status-crit/15 text-status-crit',
+  revision: 'bg-status-warn/15 text-status-warn',
 };
+const fmtSum = (v: number) => `${v.toLocaleString('ru-RU')} ₽`;
+
+const emptyForm = { clientId: '', itemType: '', companyId: '', sum: '', discount: '', managerId: '' };
+type ProposalItemInput = { name: string; qty: string; unit: string; price: string };
 
 const Proposals = () => {
-  const { success, info } = useToast();
+  const { success, error: toastError } = useToast();
   const [active, setActive] = useState('Все КП');
-  const [selected, setSelected] = useState('КП-1258');
-  const sel = proposals.find((p) => p.id === selected)!;
+  const [proposals, setProposals] = useState<ProposalRow[]>([]);
+  const [clients, setClients] = useState<ClientOpt[]>([]);
+  const [employees, setEmployees] = useState<EmployeeOpt[]>([]);
+  const [companies, setCompanies] = useState<CompanyOpt[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [selectedId, setSelectedId] = useState<number | null>(null);
+  const [detail, setDetail] = useState<ProposalDetail | null>(null);
+  const [detailLoading, setDetailLoading] = useState(false);
+
   const [showCreate, setShowCreate] = useState(false);
-  const [showSend, setShowSend] = useState(false);
-  const [showPDF, setShowPDF] = useState(false);;
+  const [form, setForm] = useState(emptyForm);
+  const [items, setItems] = useState<ProposalItemInput[]>([{ name: '', qty: '1', unit: 'шт.', price: '' }]);
+  const [submitting, setSubmitting] = useState(false);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    setLoadError(null);
+    try {
+      const data = await api<{ proposals: ProposalRow[] }>('sales', { params: { resource: 'proposals' } });
+      setProposals(data.proposals);
+    } catch (e) {
+      setLoadError(e instanceof ApiError ? e.message : 'Не удалось загрузить КП');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const loadRefs = useCallback(async () => {
+    try {
+      const [c, e] = await Promise.all([
+        api<{ clients: ClientOpt[] }>('crm', { params: { resource: 'clients' } }),
+        api<{ employees: EmployeeOpt[]; companies: CompanyOpt[] }>('employees'),
+      ]);
+      setClients(c.clients);
+      setEmployees(e.employees);
+      setCompanies(e.companies);
+    } catch {
+      // silent
+    }
+  }, []);
+
+  useEffect(() => { load(); loadRefs(); }, [load, loadRefs]);
+
+  const loadDetail = useCallback(async (id: number) => {
+    setDetailLoading(true);
+    try {
+      const data = await api<{ proposal: ProposalDetail }>('sales', { params: { resource: 'proposals', id: String(id) } });
+      setDetail(data.proposal);
+    } catch {
+      setDetail(null);
+    } finally {
+      setDetailLoading(false);
+    }
+  }, []);
+
+  const openProposal = (id: number) => { setSelectedId(id); loadDetail(id); };
+
+  const filtered = proposals.filter((p) => {
+    if (active === 'Все КП') return true;
+    if (active === 'Черновики') return p.status === 'draft';
+    if (active === 'Отправленные') return p.status === 'sent';
+    if (active === 'Согласуются') return p.status === 'agreement';
+    if (active === 'Принятые') return p.status === 'accepted';
+    if (active === 'Отклоненные') return p.status === 'rejected';
+    return true;
+  });
+
+  const itemsTotal = items.reduce((acc, it) => acc + (Number(it.qty) || 0) * (Number(it.price) || 0), 0);
+
+  const handleAddItem = () => setItems([...items, { name: '', qty: '1', unit: 'шт.', price: '' }]);
+  const handleRemoveItem = (i: number) => setItems(items.filter((_, idx) => idx !== i));
+  const handleItemChange = (i: number, field: keyof ProposalItemInput, value: string) => {
+    setItems(items.map((it, idx) => idx === i ? { ...it, [field]: value } : it));
+  };
+
+  const handleCreate = async (e: FormEvent) => {
+    e.preventDefault();
+    if (!form.clientId) {
+      toastError('Выберите клиента');
+      return;
+    }
+    setSubmitting(true);
+    try {
+      const validItems = items.filter((it) => it.name.trim());
+      await api('sales', {
+        method: 'POST',
+        params: { resource: 'proposals' },
+        body: {
+          clientId: Number(form.clientId), itemType: form.itemType.trim() || undefined,
+          companyId: form.companyId ? Number(form.companyId) : undefined,
+          sum: itemsTotal || Number(form.sum) || 0, discount: Number(form.discount) || 0,
+          managerId: form.managerId ? Number(form.managerId) : undefined,
+          items: validItems.map((it) => ({
+            name: it.name, qty: Number(it.qty) || 1, unit: it.unit,
+            price: Number(it.price) || 0, sum: (Number(it.qty) || 1) * (Number(it.price) || 0),
+          })),
+        },
+      });
+      setShowCreate(false);
+      setForm(emptyForm);
+      setItems([{ name: '', qty: '1', unit: 'шт.', price: '' }]);
+      success('КП создано', 'Добавлено в черновики');
+      await load();
+    } catch (err) {
+      toastError('Не удалось создать КП', err instanceof ApiError ? err.message : undefined);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleStatusChange = async (status: string) => {
+    if (!detail) return;
+    try {
+      await api('sales', { method: 'PUT', params: { resource: 'proposals' }, body: { id: detail.id, status } });
+      success(status === 'sent' ? 'КП отправлено клиенту' : 'Статус обновлён');
+      await load();
+      await loadDetail(detail.id);
+    } catch (err) {
+      toastError('Не удалось обновить статус', err instanceof ApiError ? err.message : undefined);
+    }
+  };
 
   return (
     <Layout
       title="Коммерческие предложения"
       titleIcon="FileText"
       actions={
-        <>
-          <button onClick={() => setShowCreate(true)} className="flex items-center gap-2 px-4 py-2.5 rounded-xl gold-gradient btn-gold text-background font-semibold text-sm shadow-lg shadow-gold/20">
-            <Icon name="Plus" size={17} /> <span className="hidden lg:inline">Создать КП</span>
-          </button>
-          <button className="flex items-center gap-2 px-3.5 py-2.5 rounded-xl glass-card text-sm hover:border-gold/30 transition-all">
-            <Icon name="Download" size={16} /> <span className="hidden lg:inline">Экспорт</span>
-          </button>
-        </>
+        <button onClick={() => setShowCreate(true)} className="flex items-center gap-2 px-4 py-2.5 rounded-xl gold-gradient btn-gold text-background font-semibold text-sm shadow-lg shadow-gold/20 whitespace-nowrap">
+          <Icon name="Plus" size={17} /> <span className="hidden lg:inline">Создать КП</span>
+        </button>
       }
     >
       <div className="flex items-center gap-1 mb-5 border-b border-border overflow-x-auto scrollbar-thin">
@@ -78,369 +179,205 @@ const Proposals = () => {
         ))}
       </div>
 
-      <div className="grid grid-cols-1 xl:grid-cols-[1fr_640px] gap-5">
-        {/* List */}
-        <div className="glass-card rounded-2xl p-4 animate-fade-in opacity-0">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="flex items-center gap-2 flex-1 px-3.5 py-2.5 rounded-xl bg-secondary">
-              <Icon name="Search" size={16} className="text-muted-foreground" />
-              <input placeholder="Поиск по клиенту, сделке, номеру КП..." className="bg-transparent text-sm outline-none flex-1 text-foreground placeholder:text-muted-foreground" />
-            </div>
-            <button className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-secondary text-sm text-muted-foreground">
-              <Icon name="SlidersHorizontal" size={15} /> Фильтры
-            </button>
-          </div>
+      {loadError && (
+        <div className="mb-5 px-4 py-3 rounded-xl bg-status-crit/10 border border-status-crit/25 flex items-center justify-between gap-3 flex-wrap">
+          <span className="text-[13px] text-status-crit">{loadError}</span>
+          <button onClick={load} className="text-[12px] text-gold hover:underline shrink-0">Повторить</button>
+        </div>
+      )}
 
-          <div className="overflow-x-auto scrollbar-thin">
-            <table className="w-full text-sm">
+      <div className="glass-card rounded-2xl p-4 animate-fade-in opacity-0 min-w-0">
+        {loading ? (
+          <div className="flex items-center justify-center py-16">
+            <Icon name="Loader2" size={28} className="text-gold animate-spin" />
+          </div>
+        ) : filtered.length === 0 ? (
+          <div className="text-center py-16 text-muted-foreground text-sm">КП не найдены</div>
+        ) : (
+          <div className="table-responsive">
+            <table className="w-full text-sm min-w-[550px]">
               <thead>
                 <tr className="text-[11px] text-muted-foreground text-left border-b border-border">
-                  <th className="font-medium pb-2 pr-2"></th><th className="font-medium pb-2 pr-3">№ КП</th><th className="font-medium pb-2 pr-3">Клиент / Сделка</th><th className="font-medium pb-2 pr-3">Сумма</th><th className="font-medium pb-2 pr-3">Статус</th><th className="font-medium pb-2">Менеджер</th>
+                  <th className="font-medium pb-2 pr-3">№ КП</th><th className="font-medium pb-2 pr-3">Клиент</th><th className="font-medium pb-2 pr-3">Сумма</th><th className="font-medium pb-2 pr-3">Статус</th><th className="font-medium pb-2">Менеджер</th>
                 </tr>
               </thead>
               <tbody>
-                {proposals.map((p) => (
-                  <tr key={p.id} onClick={() => setSelected(p.id)} className={`border-b border-border/40 cursor-pointer transition-colors ${selected === p.id ? 'bg-gold/8' : 'hover:bg-muted/30'}`}>
-                    <td className="py-3 pl-1 pr-2"><div className={`w-4 h-4 rounded border flex items-center justify-center ${selected === p.id ? 'gold-gradient border-gold' : 'border-border'}`}>{selected === p.id && <Icon name="Check" size={11} className="text-background" />}</div></td>
-                    <td className="py-3 pr-3"><div className="font-semibold text-foreground">{p.id}</div><div className="text-[11px] text-muted-foreground">{p.ver}</div></td>
-                    <td className="py-3 pr-3"><div className="text-foreground">{p.client}</div><div className="text-[11px] text-muted-foreground">{p.deal} · {p.item}</div></td>
-                    <td className="py-3 pr-3 font-semibold text-foreground whitespace-nowrap">{p.sum}</td>
-                    <td className="py-3 pr-3"><span className={`text-[11px] px-2 py-1 rounded-md whitespace-nowrap ${statusBg[p.tone]}`}>{p.status}</span></td>
-                    <td className="py-3 text-muted-foreground whitespace-nowrap">{p.mgr}</td>
+                {filtered.map((p) => (
+                  <tr key={p.id} onClick={() => openProposal(p.id)} className="border-b border-border/40 cursor-pointer transition-colors hover:bg-muted/30">
+                    <td className="py-3 pr-3"><div className="font-semibold text-foreground">{p.code}</div><div className="text-[11px] text-muted-foreground">версия {p.version}</div></td>
+                    <td className="py-3 pr-3"><div className="text-foreground truncate max-w-[140px]">{p.clientName}</div><div className="text-[11px] text-muted-foreground truncate max-w-[140px]">{p.itemType || '—'}</div></td>
+                    <td className="py-3 pr-3 font-semibold text-foreground whitespace-nowrap">{fmtSum(p.sum)}</td>
+                    <td className="py-3 pr-3"><span className={`text-[11px] px-2 py-1 rounded-md whitespace-nowrap ${statusBg[p.status] || statusBg.draft}`}>{statusRu[p.status] || p.status}</span></td>
+                    <td className="py-3 text-muted-foreground whitespace-nowrap">{p.managerName || '—'}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
-
-          <div className="flex items-center justify-between mt-4 text-sm">
-            <span className="text-muted-foreground text-xs">Всего: 42 КП</span>
-            <div className="flex items-center gap-1">
-              <button className="w-8 h-8 rounded-lg bg-secondary flex items-center justify-center"><Icon name="ChevronLeft" size={15} /></button>
-              {[1, 2, 3, 4, 5].map((n) => (
-                <button key={n} className={`w-8 h-8 rounded-lg flex items-center justify-center text-sm ${n === 1 ? 'gold-gradient text-background font-semibold' : 'bg-secondary text-muted-foreground'}`}>{n}</button>
-              ))}
-              <button className="w-8 h-8 rounded-lg bg-secondary flex items-center justify-center"><Icon name="ChevronRight" size={15} /></button>
-            </div>
-          </div>
-        </div>
-
-        {/* Detail card */}
-        <div className="space-y-5">
-          <div className="glass-card rounded-2xl p-5 animate-fade-in opacity-0" style={{ animationDelay: '80ms' }}>
-            <div className="flex items-start justify-between mb-4">
-              <div>
-                <div className="flex items-center gap-3">
-                  <h2 className="font-display font-extrabold text-2xl text-foreground">{sel.id}</h2>
-                  <span className={`text-[11px] px-2.5 py-1 rounded-md ${statusBg[sel.tone]}`}>{sel.status}</span>
-                </div>
-                <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground">
-                  <span className="flex items-center gap-1.5"><Icon name="Calendar" size={13} /> {sel.date}</span>
-                  <span className="flex items-center gap-1.5"><Icon name="GitBranch" size={13} /> {sel.ver}</span>
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <button className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-secondary text-xs hover:bg-muted transition-colors"><Icon name="Pencil" size={14} /> Редактировать</button>
-                <button className="w-8 h-8 rounded-lg bg-secondary flex items-center justify-center"><Icon name="MoreVertical" size={15} /></button>
-              </div>
-            </div>
-
-            <div className="flex flex-wrap gap-2 mb-5">
-              <button onClick={() => setShowPDF(true)} className="flex items-center gap-2 px-3.5 py-2 rounded-lg bg-secondary text-xs text-foreground hover:bg-muted hover:border-gold/30 border border-border transition-all">
-                <Icon name="FileDown" size={14} className="text-gold" /> Скачать PDF
-              </button>
-              <button onClick={() => setShowSend(true)} className="flex items-center gap-2 px-3.5 py-2 rounded-lg gold-gradient btn-gold text-background text-xs font-semibold">
-                <Icon name="Send" size={14} /> Отправить
-              </button>
-              {[['Копировать ссылку', 'Link'], ['Создать версию', 'Copy']].map(([l, i]) => (
-                <button key={l} className="flex items-center gap-2 px-3.5 py-2 rounded-lg bg-secondary text-xs text-foreground hover:bg-muted border border-border hover:border-gold/30 transition-all">
-                  <Icon name={i} size={14} className="text-gold" /> {l}
-                </button>
-              ))}
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-              {/* Info */}
-              <div className="space-y-3 text-sm">
-                <h4 className="font-display font-bold text-sm text-foreground">Информация о предложении</h4>
-                {[['Клиент', sel.client], ['Сделка', sel.deal.replace('Сделка ', '')], ['Компания', sel.company === 'ТМ' ? 'Территория Мебели' : 'Контур+'], ['Направление', sel.item], ['Адрес объекта', 'Симферополь, ЖК «Парковый», ул. Набережная, 9, кв. 45'], ['Менеджер', sel.mgr], ['Срок действия КП', 'до 06.07.2026']].map(([l, v]) => (
-                  <div key={l}><div className="text-[11px] text-muted-foreground">{l}</div><div className="text-[13px] text-foreground">{v}</div></div>
-                ))}
-              </div>
-
-              {/* Preview */}
-              <div>
-                <h4 className="font-display font-bold text-sm text-foreground mb-3">Предпросмотр КП</h4>
-                <div className="rounded-xl overflow-hidden border border-border bg-[hsl(40_15%_96%)]">
-                  <div className="p-4 text-center">
-                    <div className="font-display font-black text-[hsl(30_8%_15%)] text-base mb-0.5">ТМ ТЕРРИТОРИЯ</div>
-                    <div className="text-[8px] tracking-widest text-[hsl(30_6%_40%)] mb-3">МЕБЕЛИ</div>
-                    <div className="text-[10px] font-bold text-[hsl(30_8%_20%)] tracking-wide">КОММЕРЧЕСКОЕ ПРЕДЛОЖЕНИЕ</div>
-                    <div className="text-[9px] text-[hsl(30_6%_45%)] mb-2">{sel.item}</div>
-                  </div>
-                  <img src={HERO_IMG} alt="" className="w-full h-28 object-cover" />
-                  <div className="p-2 text-center text-[8px] text-[hsl(30_6%_45%)]">{sel.id}</div>
-                </div>
-                <div className="flex items-center justify-between mt-2 text-[11px] text-muted-foreground">
-                  <div className="flex gap-1">{[0, 1, 2, 3, 4].map((d) => <span key={d} className={`w-1.5 h-1.5 rounded-full ${d === 0 ? 'bg-gold' : 'bg-border'}`} />)}</div>
-                  <span>1 / 8</span>
-                </div>
-              </div>
-
-              {/* Approval */}
-              <div>
-                <h4 className="font-display font-bold text-sm text-foreground mb-3">Согласование КП</h4>
-                <div className="space-y-3">
-                  {approval.map((a, i) => (
-                    <div key={a.title} className="flex gap-3">
-                      <div className="flex flex-col items-center">
-                        <div className={`w-5 h-5 rounded-full flex items-center justify-center shrink-0 ${a.done ? 'bg-status-ok' : a.active ? 'border-2 border-gold' : 'border-2 border-border'}`}>
-                          {a.done && <Icon name="Check" size={12} className="text-white" />}
-                          {a.active && <div className="w-1.5 h-1.5 rounded-full bg-gold" />}
-                        </div>
-                        {i < approval.length - 1 && <div className={`w-0.5 flex-1 min-h-[20px] ${a.done ? 'bg-status-ok/40' : 'bg-border'}`} />}
-                      </div>
-                      <div className="pb-1">
-                        <div className={`text-[13px] font-medium ${a.active ? 'text-gold' : 'text-foreground'}`}>{a.title}</div>
-                        <div className="text-[11px] text-muted-foreground whitespace-pre-line">{a.sub}</div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-                <button className="w-full mt-3 py-2.5 rounded-xl border border-gold/30 text-gold text-sm font-medium hover:bg-gold/10 transition-colors">Перейти к сделке</button>
-              </div>
-            </div>
-          </div>
-
-          {/* Composition */}
-          <div className="glass-card rounded-2xl p-5 animate-fade-in opacity-0" style={{ animationDelay: '160ms' }}>
-            <h3 className="font-display font-bold text-base mb-4">Состав предложения</h3>
-            <div className="grid grid-cols-1 lg:grid-cols-[1fr_240px] gap-5">
-              <div className="overflow-x-auto scrollbar-thin">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="text-[11px] text-muted-foreground text-left border-b border-border">
-                      <th className="font-medium pb-2 pr-2">№</th><th className="font-medium pb-2 pr-3">Наименование</th><th className="font-medium pb-2 pr-3">Кол-во</th><th className="font-medium pb-2 pr-3">Ед. изм.</th><th className="font-medium pb-2 pr-3">Цена</th><th className="font-medium pb-2">Сумма</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {composition.map((c) => (
-                      <tr key={c.n} className="border-b border-border/40">
-                        <td className="py-2.5 pr-2 text-muted-foreground">{c.n}</td>
-                        <td className="py-2.5 pr-3 text-foreground">{c.name}</td>
-                        <td className="py-2.5 pr-3 text-foreground">{c.qty}</td>
-                        <td className="py-2.5 pr-3 text-muted-foreground">{c.unit}</td>
-                        <td className="py-2.5 pr-3 text-foreground whitespace-nowrap">{c.price}</td>
-                        <td className="py-2.5 font-semibold text-foreground whitespace-nowrap">{c.sum}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-                <button className="mt-3 text-xs px-4 py-2 rounded-lg bg-secondary text-foreground hover:bg-muted transition-colors">Посмотреть весь состав</button>
-              </div>
-
-              <div className="space-y-3">
-                <div className="flex justify-between text-sm"><span className="text-muted-foreground">Сумма без скидки</span><span className="text-foreground">2 160 000 ₽</span></div>
-                <div className="flex justify-between text-sm"><span className="text-muted-foreground">Скидка</span><span className="text-status-crit">310 000 ₽</span></div>
-                <div className="flex justify-between items-center pt-3 border-t border-border">
-                  <span className="font-display font-bold text-foreground">Итого</span>
-                  <span className="font-display font-extrabold text-xl text-gold">1 850 000 ₽</span>
-                </div>
-                <div className="text-[11px] text-muted-foreground">НДС не облагается</div>
-                <div className="mt-2 p-3 rounded-xl bg-gold/8 border border-gold/15 text-[11px] text-foreground/80 leading-relaxed">
-                  Срок изготовления: 40 рабочих дней<br />Срок монтажа: 2 дня
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+        )}
       </div>
 
-      {/* ── Создать КП modal ── */}
+      {/* ── Deal detail modal ── */}
       <Modal
-        open={showCreate}
-        onClose={() => setShowCreate(false)}
-        title="Создать коммерческое предложение"
-        subtitle="Новое КП для клиента"
+        open={!!selectedId}
+        onClose={() => { setSelectedId(null); setDetail(null); }}
+        title={detail?.code}
+        subtitle={detail?.clientName}
         icon="FileText"
-        size="lg"
-        footer={
-          <div className="flex gap-3">
-            <button onClick={() => { setShowCreate(false); success('КП создано', 'Добавлено в черновики'); }} className="flex-1 py-3 rounded-xl gold-gradient btn-gold text-background font-semibold text-sm shadow-lg shadow-gold/20">
-              Создать КП
-            </button>
-            <button onClick={() => setShowCreate(false)} className="px-5 py-3 rounded-xl bg-secondary border border-border text-sm hover:border-gold/30 transition-colors">
-              Сохранить черновик
-            </button>
-          </div>
-        }
+        size="md"
+        badge={detail ? { label: statusRu[detail.status] || detail.status, tone: detail.status === 'accepted' ? 'ok' : detail.status === 'rejected' ? 'crit' : 'gold' } : undefined}
       >
-        <div className="grid grid-cols-2 gap-4 pb-2">
-          <div className="col-span-2">
-            <label className="text-[11px] text-muted-foreground mb-1.5 block font-medium">Клиент / Сделка</label>
-            <div className="flex items-center gap-3 px-3.5 py-3 rounded-xl bg-secondary border border-border focus-within:border-gold/50 transition-colors">
-              <Icon name="User" size={15} className="text-gold shrink-0" />
-              <input placeholder="Начните вводить имя клиента или номер сделки..." className="bg-transparent text-sm outline-none flex-1 text-foreground placeholder:text-muted-foreground/50" />
-              <Icon name="Search" size={14} className="text-muted-foreground" />
+        {detailLoading || !detail ? (
+          <div className="flex items-center justify-center py-16"><Icon name="Loader2" size={24} className="text-gold animate-spin" /></div>
+        ) : (
+          <div className="space-y-4 pb-2">
+            <div className="flex flex-wrap gap-2">
+              {detail.status === 'draft' && (
+                <button onClick={() => handleStatusChange('sent')} className="flex items-center gap-2 px-3.5 py-2 rounded-lg gold-gradient btn-gold text-background text-xs font-semibold">
+                  <Icon name="Send" size={14} /> Отправить клиенту
+                </button>
+              )}
+              {detail.status === 'sent' && (
+                <button onClick={() => handleStatusChange('agreement')} className="flex items-center gap-2 px-3.5 py-2 rounded-lg bg-status-warn/15 text-status-warn text-xs font-semibold">На согласовании</button>
+              )}
+              {(detail.status === 'sent' || detail.status === 'agreement') && (
+                <>
+                  <button onClick={() => handleStatusChange('accepted')} className="flex items-center gap-2 px-3.5 py-2 rounded-lg bg-status-ok/15 text-status-ok text-xs font-semibold"><Icon name="Check" size={14} /> Принято</button>
+                  <button onClick={() => handleStatusChange('rejected')} className="flex items-center gap-2 px-3.5 py-2 rounded-lg bg-status-crit/15 text-status-crit text-xs font-semibold"><Icon name="X" size={14} /> Отклонено</button>
+                </>
+              )}
             </div>
-          </div>
-          {[
-            { label: 'Направление / Тип мебели', placeholder: 'Кухня и остров', icon: 'Sofa' },
-            { label: 'Адрес объекта', placeholder: 'Симферополь, ЖК «Парковый»', icon: 'MapPin' },
-          ].map((f) => (
-            <div key={f.label}>
-              <label className="text-[11px] text-muted-foreground mb-1.5 block font-medium">{f.label}</label>
-              <div className="flex items-center gap-3 px-3.5 py-3 rounded-xl bg-secondary border border-border focus-within:border-gold/50 transition-colors">
-                <Icon name={f.icon} size={15} className="text-gold shrink-0" />
-                <input placeholder={f.placeholder} className="bg-transparent text-sm outline-none flex-1 text-foreground placeholder:text-muted-foreground/50" />
-              </div>
-            </div>
-          ))}
-          <div>
-            <label className="text-[11px] text-muted-foreground mb-1.5 block font-medium">Менеджер</label>
-            <div className="flex items-center gap-3 px-3.5 py-3 rounded-xl bg-secondary border border-border focus-within:border-gold/50 transition-colors">
-              <Icon name="UserCircle" size={15} className="text-gold shrink-0" />
-              <input defaultValue="Иванова А.С." className="bg-transparent text-sm outline-none flex-1 text-foreground" />
-            </div>
-          </div>
-          <div>
-            <label className="text-[11px] text-muted-foreground mb-1.5 block font-medium">Компания</label>
-            <div className="flex gap-2">
-              {['Территория Мебели', 'Контур+'].map((c, i) => (
-                <button key={c} className={`flex-1 py-2.5 rounded-xl text-[12px] font-medium transition-all border ${i === 0 ? 'gold-gradient text-background border-transparent' : 'bg-secondary border-border text-muted-foreground hover:border-gold/30'}`}>{c}</button>
+
+            <div className="space-y-3 text-sm">
+              {[
+                ['Компания', detail.companyName || '—'], ['Направление', detail.itemType || '—'],
+                ['Менеджер', detail.managerName || '—'], ['Срок действия', `${detail.validDays || 14} дней`],
+              ].map(([l, v]) => (
+                <div key={l} className="flex gap-3">
+                  <span className="text-muted-foreground w-28 shrink-0">{l}</span>
+                  <span className="text-foreground font-medium truncate">{v}</span>
+                </div>
               ))}
             </div>
+
+            {detail.items.length > 0 && (
+              <div>
+                <h3 className="font-display font-bold text-sm mb-3">Состав предложения</h3>
+                <div className="table-responsive mb-3">
+                  <table className="w-full text-sm min-w-[400px]">
+                    <thead>
+                      <tr className="text-[11px] text-muted-foreground text-left border-b border-border">
+                        <th className="font-medium pb-2 pr-3">Наименование</th><th className="font-medium pb-2 pr-3">Кол-во</th><th className="font-medium pb-2">Сумма</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {detail.items.map((c) => (
+                        <tr key={c.id} className="border-b border-border/40">
+                          <td className="py-2.5 pr-3 text-foreground">{c.name}</td>
+                          <td className="py-2.5 pr-3 text-foreground whitespace-nowrap">{c.qty} {c.unit}</td>
+                          <td className="py-2.5 font-semibold text-foreground whitespace-nowrap">{fmtSum(c.sum)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                <div className="space-y-2 max-w-xs ml-auto">
+                  <div className="flex justify-between text-sm"><span className="text-muted-foreground">Скидка</span><span className="text-status-crit">{fmtSum(detail.discount)}</span></div>
+                  <div className="flex justify-between items-center pt-2 border-t border-border">
+                    <span className="font-display font-bold text-foreground">Итого</span>
+                    <span className="font-display font-extrabold text-xl text-gold">{fmtSum(detail.sum - detail.discount)}</span>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
+        )}
+      </Modal>
+
+      {/* ── Создать КП modal ── */}
+      <Modal open={showCreate} onClose={() => { setShowCreate(false); setForm(emptyForm); }} title="Создать коммерческое предложение" icon="FileText" size="lg">
+        <form onSubmit={handleCreate} className="space-y-4 pb-2">
           <div>
-            <label className="text-[11px] text-muted-foreground mb-1.5 block font-medium">Сумма (предварительно)</label>
-            <div className="flex items-center gap-3 px-3.5 py-3 rounded-xl bg-secondary border border-border focus-within:border-gold/50 transition-colors">
-              <Icon name="CircleDollarSign" size={15} className="text-gold shrink-0" />
-              <input placeholder="1 500 000" className="bg-transparent text-sm outline-none flex-1 text-foreground placeholder:text-muted-foreground/50" />
-              <span className="text-muted-foreground text-sm shrink-0">₽</span>
+            <label className="text-[11px] text-muted-foreground mb-1.5 block font-medium">Клиент *</label>
+            <select value={form.clientId} onChange={(e) => setForm({ ...form, clientId: e.target.value })}
+              className="w-full px-3.5 py-3 rounded-xl bg-secondary border border-border text-sm outline-none focus:border-gold/50 text-foreground">
+              <option value="">Выберите клиента...</option>
+              {clients.map((c) => <option key={c.id} value={c.id}>{c.fullName}</option>)}
+            </select>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="text-[11px] text-muted-foreground mb-1.5 block font-medium">Направление</label>
+              <input value={form.itemType} onChange={(e) => setForm({ ...form, itemType: e.target.value })} placeholder="Кухня и остров"
+                className="w-full px-3.5 py-3 rounded-xl bg-secondary border border-border text-sm outline-none focus:border-gold/50 text-foreground placeholder:text-muted-foreground/50" />
+            </div>
+            <div>
+              <label className="text-[11px] text-muted-foreground mb-1.5 block font-medium">Компания</label>
+              <select value={form.companyId} onChange={(e) => setForm({ ...form, companyId: e.target.value })}
+                className="w-full px-3.5 py-3 rounded-xl bg-secondary border border-border text-sm outline-none focus:border-gold/50 text-foreground">
+                <option value="">—</option>
+                {companies.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+              </select>
             </div>
           </div>
           <div>
-            <label className="text-[11px] text-muted-foreground mb-1.5 block font-medium">Срок действия КП</label>
-            <div className="flex items-center gap-3 px-3.5 py-3 rounded-xl bg-secondary border border-border focus-within:border-gold/50 transition-colors">
-              <Icon name="Calendar" size={15} className="text-gold shrink-0" />
-              <input placeholder="14 дней" className="bg-transparent text-sm outline-none flex-1 text-foreground placeholder:text-muted-foreground/50" />
-            </div>
-          </div>
-          <div className="col-span-2">
-            <label className="text-[11px] text-muted-foreground mb-2 block font-medium">Шаблон КП</label>
-            <div className="grid grid-cols-3 gap-3">
-              {['Стандартный', 'Премиум (Территория Мебели)', 'Бюджетный (Контур+)'].map((t, i) => (
-                <button key={t} className={`p-3 rounded-xl text-[12px] text-left border transition-all ${i === 1 ? 'border-gold/40 bg-gold/8 text-gold' : 'border-border bg-secondary text-muted-foreground hover:border-gold/30'}`}>
-                  <Icon name="FileText" size={16} className="mb-2 block" />
-                  {t}
+            <label className="text-[11px] text-muted-foreground mb-2 block font-medium">Менеджер</label>
+            <div className="flex gap-2 flex-wrap">
+              {employees.map((m) => (
+                <button type="button" key={m.id} onClick={() => setForm({ ...form, managerId: String(m.id) })}
+                  className={`px-3 py-1.5 rounded-lg text-[12px] border transition-all ${form.managerId === String(m.id) ? 'gold-gradient text-background border-transparent font-semibold' : 'bg-secondary border-border text-muted-foreground hover:border-gold/30'}`}>
+                  {m.firstName} {m.lastName[0]}.
                 </button>
               ))}
             </div>
           </div>
-          <div className="col-span-2">
-            <label className="text-[11px] text-muted-foreground mb-1.5 block font-medium">Примечание</label>
-            <textarea placeholder="Особые условия, пожелания клиента..." rows={2}
-              className="w-full px-3.5 py-3 rounded-xl bg-secondary border border-border focus:border-gold/50 transition-colors text-sm outline-none text-foreground placeholder:text-muted-foreground/50 resize-none" />
-          </div>
-        </div>
-      </Modal>
 
-      {/* ── Отправить КП modal ── */}
-      <Modal
-        open={showSend}
-        onClose={() => setShowSend(false)}
-        title="Отправить КП клиенту"
-        subtitle={`${sel.id} · ${sel.client}`}
-        icon="Send"
-        size="sm"
-        badge={{ label: sel.status, tone: sel.tone as 'ok' | 'warn' | 'crit' | 'info' | 'gold' | 'muted' }}
-        footer={
-          <div className="flex gap-3">
-            <button onClick={() => { setShowSend(false); success('КП отправлено клиенту'); }} className="flex-1 py-3 rounded-xl gold-gradient btn-gold text-background font-semibold text-sm shadow-gold/20 shadow-lg flex items-center justify-center gap-2">
-              <Icon name="Send" size={15} /> Отправить
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <label className="text-[11px] text-muted-foreground block font-medium">Состав предложения</label>
+              <button type="button" onClick={handleAddItem} className="text-[12px] text-gold hover:underline flex items-center gap-1"><Icon name="Plus" size={13} /> Добавить позицию</button>
+            </div>
+            <div className="space-y-2">
+              {items.map((it, i) => (
+                <div key={i} className="flex gap-2 items-center">
+                  <input value={it.name} onChange={(e) => handleItemChange(i, 'name', e.target.value)} placeholder="Наименование"
+                    className="flex-1 px-3 py-2 rounded-lg bg-secondary border border-border text-[12px] outline-none focus:border-gold/50 text-foreground placeholder:text-muted-foreground/50 min-w-0" />
+                  <input value={it.qty} onChange={(e) => handleItemChange(i, 'qty', e.target.value)} placeholder="Кол-во" type="number"
+                    className="w-16 px-2 py-2 rounded-lg bg-secondary border border-border text-[12px] outline-none focus:border-gold/50 text-foreground text-center" />
+                  <input value={it.price} onChange={(e) => handleItemChange(i, 'price', e.target.value)} placeholder="Цена" type="number"
+                    className="w-24 px-2 py-2 rounded-lg bg-secondary border border-border text-[12px] outline-none focus:border-gold/50 text-foreground text-right" />
+                  {items.length > 1 && (
+                    <button type="button" onClick={() => handleRemoveItem(i)} className="w-7 h-7 rounded-lg bg-secondary flex items-center justify-center hover:bg-status-crit/15 hover:text-status-crit shrink-0">
+                      <Icon name="X" size={13} />
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
+            {itemsTotal > 0 && (
+              <div className="flex justify-end mt-2 text-sm">
+                <span className="text-muted-foreground mr-2">Итого:</span>
+                <span className="font-display font-bold text-gold">{fmtSum(itemsTotal)}</span>
+              </div>
+            )}
+          </div>
+
+          <div>
+            <label className="text-[11px] text-muted-foreground mb-1.5 block font-medium">Скидка (₽)</label>
+            <input value={form.discount} onChange={(e) => setForm({ ...form, discount: e.target.value })} type="number" placeholder="0"
+              className="w-full px-3.5 py-3 rounded-xl bg-secondary border border-border text-sm outline-none focus:border-gold/50 text-foreground placeholder:text-muted-foreground/50" />
+          </div>
+
+          <div className="flex gap-3 pt-1">
+            <button type="submit" disabled={submitting} className="flex-1 py-3 rounded-xl gold-gradient btn-gold text-background font-semibold text-sm shadow-lg shadow-gold/20 disabled:opacity-60 flex items-center justify-center gap-2">
+              {submitting ? <Icon name="Loader2" size={16} className="animate-spin" /> : <Icon name="FileText" size={16} />}
+              Создать КП
             </button>
-            <button onClick={() => setShowSend(false)} className="px-5 py-3 rounded-xl bg-secondary border border-border text-sm hover:border-gold/30 transition-colors">
+            <button type="button" onClick={() => { setShowCreate(false); setForm(emptyForm); }} className="px-5 py-3 rounded-xl bg-secondary border border-border text-sm hover:border-gold/30 transition-colors">
               Отмена
             </button>
           </div>
-        }
-      >
-        <div className="space-y-4 pb-2">
-          <div className="p-3 rounded-xl bg-gold/8 border border-gold/15 flex items-center gap-3">
-            <Icon name="FileText" size={18} className="text-gold shrink-0" />
-            <div>
-              <div className="text-[13px] font-semibold text-foreground">{sel.id} · {sel.item}</div>
-              <div className="text-[11px] text-muted-foreground">{sel.sum} · {sel.ver}</div>
-            </div>
-          </div>
-          {[
-            { label: 'Email клиента', placeholder: 'client@mail.ru', icon: 'Mail', value: 'maria.petrova@mail.ru' },
-            { label: 'Тема письма', placeholder: 'Коммерческое предложение', icon: 'MessageSquare', value: `КП на ${sel.item} — Территория Мебели` },
-          ].map((f) => (
-            <div key={f.label}>
-              <label className="text-[11px] text-muted-foreground mb-1.5 block font-medium">{f.label}</label>
-              <div className="flex items-center gap-3 px-3.5 py-3 rounded-xl bg-secondary border border-border focus-within:border-gold/50 transition-colors">
-                <Icon name={f.icon} size={15} className="text-gold shrink-0" />
-                <input defaultValue={f.value} placeholder={f.placeholder} className="bg-transparent text-sm outline-none flex-1 text-foreground" />
-              </div>
-            </div>
-          ))}
-          <div>
-            <label className="text-[11px] text-muted-foreground mb-1.5 block font-medium">Сообщение</label>
-            <textarea rows={3} defaultValue={`Здравствуйте, ${sel.client}!\n\nВысылаем коммерческое предложение по вашему запросу. Будем рады ответить на вопросы.\n\nС уважением, команда Территория Мебели`}
-              className="w-full px-3.5 py-3 rounded-xl bg-secondary border border-border focus:border-gold/50 transition-colors text-sm outline-none text-foreground resize-none" />
-          </div>
-          <div className="flex items-center gap-3 text-[12px] text-muted-foreground p-3 bg-secondary/50 rounded-xl">
-            <Icon name="Paperclip" size={14} className="text-gold" />
-            <span>КП-1258_v2.pdf · 2.4 МБ — будет прикреплено</span>
-          </div>
-        </div>
-      </Modal>
-
-      {/* ── Скачать PDF modal ── */}
-      <Modal
-        open={showPDF}
-        onClose={() => setShowPDF(false)}
-        title="Скачать PDF"
-        icon="FileDown"
-        size="sm"
-        footer={
-          <button onClick={() => { setShowPDF(false); info('Файл подготовлен', 'Загрузка началась'); }} className="w-full py-3 rounded-xl gold-gradient btn-gold text-background font-semibold text-sm shadow-lg shadow-gold/20 flex items-center justify-center gap-2">
-            <Icon name="Download" size={16} /> Скачать {sel.id}.pdf
-          </button>
-        }
-      >
-        <div className="space-y-3 pb-2">
-          <div className="p-4 rounded-xl bg-secondary text-center">
-            <Icon name="FileText" size={40} className="text-gold mx-auto mb-2" />
-            <div className="font-semibold text-foreground">{sel.id}_v2.pdf</div>
-            <div className="text-[11px] text-muted-foreground mt-1">Предварительный расчёт · {sel.sum}</div>
-          </div>
-          <div>
-            <label className="text-[11px] text-muted-foreground mb-2 block font-medium">Формат</label>
-            <div className="grid grid-cols-3 gap-2">
-              {['A4 Портрет', 'A4 Альбом', 'Компактный'].map((f, i) => (
-                <button key={f} className={`py-2.5 rounded-xl text-[12px] border transition-all ${i === 0 ? 'gold-gradient text-background border-transparent font-semibold' : 'bg-secondary border-border text-muted-foreground hover:border-gold/30'}`}>{f}</button>
-              ))}
-            </div>
-          </div>
-          <div className="flex items-center gap-3 text-[12px]">
-            <div className="w-4 h-4 rounded gold-gradient flex items-center justify-center shrink-0">
-              <Icon name="Check" size={10} className="text-background" />
-            </div>
-            <span className="text-foreground">Включить состав предложения</span>
-          </div>
-          <div className="flex items-center gap-3 text-[12px]">
-            <div className="w-4 h-4 rounded gold-gradient flex items-center justify-center shrink-0">
-              <Icon name="Check" size={10} className="text-background" />
-            </div>
-            <span className="text-foreground">Включить условия и сроки</span>
-          </div>
-          <div className="flex items-center gap-3 text-[12px]">
-            <div className="w-4 h-4 rounded bg-secondary border border-border flex items-center justify-center shrink-0" />
-            <span className="text-muted-foreground">Водяной знак «КОНФИДЕНЦИАЛЬНО»</span>
-          </div>
-        </div>
+        </form>
       </Modal>
     </Layout>
   );

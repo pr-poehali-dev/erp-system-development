@@ -1,0 +1,9 @@
+-- Дополнительные тестовые сотрудники для реалистичности данных
+INSERT INTO employees (first_name, last_name, middle_name, email, phone, login, password_hash, must_change_password, role_id, department_id, company_id, status) VALUES
+('Елена', 'Петрова', 'Викторовна', 'petrova@company.ru', '+7 (978) 222-33-44', 'petrova.elena', '9a4d03c6ea92c0f0c5ab98cc882ec0e0$83a4fc3ae7512f8e13d76f616e2a4c247b41fe3077992d5af3d2b71daae77b3b', TRUE, 3, 2, 2, 'active'),
+('Дмитрий', 'Кузнецов', 'Андреевич', 'kuznetsov@company.ru', '+7 (978) 333-44-55', 'kuznetsov.dmitriy', 'd53d1359595f44f5269b07d995475485$5478fb991fc2d7a5dc99d93404f17301ce90c7c78bfacba49e0394ab860cf903', TRUE, 3, 2, 2, 'active'),
+('Павел', 'Смирнов', 'Александрович', 'smirnov@company.ru', '+7 (978) 444-55-66', 'smirnov.pavel', 'ed5ad2c8f89595a53b7dde1c9951bce5$e4496b87248edeeda2ba1d08e5770c94fd6ad51995cf287672dabe01988d842c', TRUE, 4, 4, 2, 'active'),
+('Валентина', 'Морозова', 'Александровна', 'morozova@company.ru', '+7 (978) 555-66-77', 'morozova.valentina', '3f321d48490bcd0a4d908fd86f473046$f678d975e3ea8279567998b9c6910c3d458f9f92e1b8a2f61787402a83921070', TRUE, 5, 4, 2, 'vacation'),
+('Артём', 'Кириллов', NULL, 'kirillov@company.ru', '+7 (978) 666-77-88', 'kirillov.artem', '9d04b2bf96310aecbe1d9ee515444ed3$c589c0aaa03c93c0a88375dfaa39c893663da386472ca702ca49b7b58e916781', TRUE, 10, 3, 2, 'active'),
+('Николай', 'Волков', NULL, 'volkov@company.ru', '+7 (978) 777-88-99', 'volkov.nikolay', '74dd9afab460e1e11e002142fd59e64d$ee2ec13d1dfb243f78f97c98eea37d67d13c67d16bf63b0b7a038e836388a85b', TRUE, 10, 3, 2, 'active'),
+('Наталья', 'Соколова', 'Игоревна', 'sokolova@company.ru', '+7 (978) 888-99-00', 'sokolova.natalya', '4f22c0a3579e91a6ded7fbe71e782f88$1137ae16076e3f79a79fa85587727afcd71b1a4c6fb32b68164306e175b61a5d', TRUE, 4, 4, 2, 'active');

@@ -34,7 +34,7 @@ export async function api<T = unknown>(func: string, opts: ApiOptions = {}): Pro
   const base = URLS[func];
   if (!base) throw new Error(`Unknown backend function: ${func}`);
 
-  const url = new URL(base);
+  const url = new URL(base, window.location.origin);
   if (opts.params) {
     Object.entries(opts.params).forEach(([k, v]) => url.searchParams.set(k, v));
   }

@@ -102,6 +102,7 @@ const TeamChat = ({ open, onOpen, onClose }: TeamChatProps) => {
 
   useEffect(() => {
     if (!open) return;
+    setCollapsed(false);
     loadChannels();
     pollRef.current = setInterval(loadChannels, 8000);
     return () => { if (pollRef.current) clearInterval(pollRef.current); };

@@ -2,6 +2,8 @@ import { useState, useEffect, useCallback, FormEvent } from 'react';
 import Layout from '@/components/Layout';
 import Icon from '@/components/ui/icon';
 import Modal from '@/components/Modal';
+import ChecklistWidget from '@/components/ChecklistWidget';
+import InlineEditField from '@/components/InlineEditField';
 import { useToast } from '@/hooks/useToast';
 import { api, ApiError } from '@/lib/api';
 
@@ -12,12 +14,13 @@ interface Stage {
 }
 interface Deal {
   id: number; clientId: number; clientName: string; stageId: number; stageSlug: string; stageName: string;
-  objectAddress?: string; sum: number | null; managerId?: number; managerName?: string;
+  objectAddress?: string; clientObjectId?: number | null; sum: number | null; managerId?: number; managerName?: string;
   companyId?: number; source?: string; tag?: string; taskNote?: string; isOverdue?: boolean;
   comment?: string; daysInStage?: number;
 }
+interface ClientObjectOpt { id: number; objectType?: string; address: string; label?: string; isPrimary?: boolean; }
 interface DealDetail extends Deal {
-  clientPhone?: string; clientEmail?: string; objectType?: string;
+  clientPhone?: string; clientEmail?: string; objectType?: string; clientObjects?: ClientObjectOpt[];
   tasks: { id: number; text: string; done: boolean; tone?: string }[];
   history: { id: number; eventText: string; employeeName?: string; createdAt: string }[];
 }
@@ -77,6 +80,7 @@ const CRM = () => {
   const [form, setForm] = useState(emptyForm);
   const [submitting, setSubmitting] = useState(false);
   const [showFilter, setShowFilter] = useState(false);
+  const [showChecklist, setShowChecklist] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -172,6 +176,16 @@ const CRM = () => {
     }
   };
 
+  const handleDealFieldSave = async (dealId: number, field: string, value: string) => {
+    const body: Record<string, unknown> = { id: dealId };
+    if (field === 'sum') body.sum = value ? Number(value) : null;
+    else if (field === 'clientObjectId') body.clientObjectId = value ? Number(value) : null;
+    else body[field] = value;
+    await api('crm', { method: 'PUT', params: { resource: 'deals' }, body });
+    await load();
+    if (selectedDealId === dealId) await loadDetail(dealId);
+  };
+
   return (
     <Layout
       title="CRM / Сделки"
@@ -240,33 +254,102 @@ const CRM = () => {
         icon="Briefcase"
         size="md"
         badge={detail ? { label: detail.stageName, tone: 'ok' } : undefined}
+        headerRight={
+          detail && (
+            <button
+              onClick={() => setShowChecklist(true)}
+              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-gold/10 border border-gold/25 text-gold text-[11px] font-semibold hover:bg-gold/15 transition-colors"
+            >
+              <Icon name="ListChecks" size={14} /> Чек-лист
+            </button>
+          )
+        }
       >
         {detailLoading || !detail ? (
           <div className="flex items-center justify-center py-16"><Icon name="Loader2" size={24} className="text-gold animate-spin" /></div>
         ) : (
           <div className="space-y-4 pb-2">
             <div className="space-y-3 text-[13px]">
-              {[
-                ['Телефон', detail.clientPhone || '—'],
-                ['Email', detail.clientEmail || '—'],
-                ['Тип', detail.objectType || '—'],
-                ['Сумма', fmtSum(detail.sum)],
-                ['Менеджер', detail.managerName || '—'],
-                ['Источник', detail.source || '—'],
-              ].map(([l, v]) => (
-                <div key={l} className="flex gap-3">
-                  <span className="text-muted-foreground w-20 shrink-0">{l}</span>
-                  <span className="text-foreground font-medium truncate">{v}</span>
+              <div className="flex gap-3">
+                <span className="text-muted-foreground w-20 shrink-0 pt-3">Телефон</span>
+                <span className="text-foreground font-medium truncate pt-3">{detail.clientPhone || '—'}</span>
+              </div>
+              <div className="flex gap-3">
+                <span className="text-muted-foreground w-20 shrink-0 pt-3">Email</span>
+                <span className="text-foreground font-medium truncate pt-3">{detail.clientEmail || '—'}</span>
+              </div>
+
+              {detail.clientObjects && detail.clientObjects.length > 0 ? (
+                <InlineEditField
+                  label="Объект клиента"
+                  icon="Home"
+                  type="select"
+                  value={detail.clientObjectId ? String(detail.clientObjectId) : ''}
+                  options={[
+                    { value: '', label: '— не выбран —' },
+                    ...detail.clientObjects.map((o) => ({
+                      value: String(o.id),
+                      label: `${o.address}${o.label ? ` (${o.label})` : ''}${o.isPrimary ? ' · основной' : ''}`,
+                    })),
+                  ]}
+                  onSave={(v) => handleDealFieldSave(detail.id, 'clientObjectId', v)}
+                />
+              ) : (
+                <div className="flex gap-3">
+                  <span className="text-muted-foreground w-20 shrink-0 pt-3">Объект</span>
+                  <span className="text-foreground font-medium truncate pt-3">{detail.objectType || '—'}</span>
                 </div>
-              ))}
+              )}
+
+              <InlineEditField
+                label="Адрес объекта"
+                icon="MapPin"
+                type="text"
+                value={detail.objectAddress || ''}
+                placeholder="Адрес объекта сделки"
+                onSave={(v) => handleDealFieldSave(detail.id, 'objectAddress', v)}
+              />
+
+              <InlineEditField
+                label="Сумма сделки"
+                icon="CircleDollarSign"
+                type="number"
+                value={detail.sum !== null ? String(detail.sum) : ''}
+                placeholder="0"
+                onSave={(v) => handleDealFieldSave(detail.id, 'sum', v)}
+              />
+
+              <InlineEditField
+                label="Менеджер"
+                icon="UserCircle"
+                type="select"
+                value={detail.managerId ? String(detail.managerId) : ''}
+                options={[
+                  { value: '', label: '— не назначен —' },
+                  ...employees.map((e) => ({ value: String(e.id), label: `${e.firstName} ${e.lastName}` })),
+                ]}
+                onSave={(v) => handleDealFieldSave(detail.id, 'managerId', v)}
+              />
+
+              <InlineEditField
+                label="Источник"
+                icon="Share2"
+                type="text"
+                value={detail.source || ''}
+                placeholder="Instagram, ВК..."
+                onSave={(v) => handleDealFieldSave(detail.id, 'source', v)}
+              />
             </div>
 
-            {detail.comment && (
-              <div>
-                <div className="text-muted-foreground text-[13px] mb-1">Комментарий</div>
-                <div className="text-foreground text-[12px] bg-secondary rounded-xl p-3 leading-relaxed">{detail.comment}</div>
-              </div>
-            )}
+            <InlineEditField
+              label="Комментарий"
+              icon="MessageSquare"
+              type="textarea"
+              rows={3}
+              value={detail.comment || ''}
+              placeholder="Заметки по сделке..."
+              onSave={(v) => handleDealFieldSave(detail.id, 'comment', v)}
+            />
 
             {detail.tasks.length > 0 && (
               <div>
@@ -317,6 +400,17 @@ const CRM = () => {
           </div>
         )}
       </Modal>
+
+      {/* ── Чек-лист виджет (закрепляемый) ── */}
+      {detail && (
+        <ChecklistWidget
+          open={showChecklist}
+          onClose={() => setShowChecklist(false)}
+          entityType="deal"
+          entityId={detail.id}
+          title={detail.clientName}
+        />
+      )}
 
       {/* ── Новая сделка modal ── */}
       <Modal

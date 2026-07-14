@@ -5,6 +5,8 @@ import Icon from '@/components/ui/icon';
 import { QuickCreateModal, NotificationsModal } from '@/components/Modal';
 import { useAuth } from '@/hooks/useAuth';
 import { ThemeToggleButton } from '@/components/ThemeToggle';
+import TeamChat from '@/components/TeamChat';
+import { useChat } from '@/hooks/useChat';
 
 interface LayoutProps {
   title: string;
@@ -17,6 +19,7 @@ interface LayoutProps {
 const Layout = ({ title, subtitle, titleIcon, actions, children }: LayoutProps) => {
   const navigate = useNavigate();
   const { employee, logout } = useAuth();
+  const { open: chatOpen, openChat, closeChat } = useChat();
   const [showQuick, setShowQuick] = useState(false);
   const [showNotifs, setShowNotifs] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
@@ -173,6 +176,7 @@ const Layout = ({ title, subtitle, titleIcon, actions, children }: LayoutProps) 
 
       <QuickCreateModal open={showQuick} onClose={() => setShowQuick(false)} />
       <NotificationsModal open={showNotifs} onClose={() => setShowNotifs(false)} />
+      <TeamChat open={chatOpen} onOpen={openChat} onClose={closeChat} />
     </div>
   );
 };

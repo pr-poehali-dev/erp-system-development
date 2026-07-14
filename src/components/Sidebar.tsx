@@ -1,5 +1,6 @@
 import { useNavigate, useLocation } from 'react-router-dom';
 import Icon from '@/components/ui/icon';
+import { useChat } from '@/hooks/useChat';
 
 const navItems = [
   { name: 'Главная', icon: 'LayoutDashboard', path: '/dashboard' },
@@ -32,6 +33,7 @@ interface SidebarProps {
 const NavContent = ({ onClose }: { onClose?: () => void }) => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { openChat } = useChat();
 
   const go = (path: string) => {
     navigate(path);
@@ -89,17 +91,20 @@ const NavContent = ({ onClose }: { onClose?: () => void }) => {
         })}
       </nav>
 
-      {/* Support */}
+      {/* Company chat */}
       <div className="px-2.5 py-3 border-t border-sidebar-border shrink-0">
-        <div className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl bg-sidebar-accent/70">
+        <button
+          onClick={() => { openChat(); onClose?.(); }}
+          className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl bg-sidebar-accent/70 hover:bg-sidebar-accent transition-colors"
+        >
           <div className="w-7 h-7 rounded-lg bg-gold/12 flex items-center justify-center shrink-0">
-            <Icon name="Headphones" size={14} className="text-gold" />
+            <Icon name="MessageCircle" size={14} className="text-gold" />
           </div>
-          <div className="min-w-0">
-            <div className="text-[11px] font-medium text-sidebar-accent-foreground">Тех. поддержка</div>
-            <div className="text-[10px] text-gold/70 truncate">info@неостандарт.рф</div>
+          <div className="min-w-0 text-left">
+            <div className="text-[11px] font-medium text-sidebar-accent-foreground">Чат компании</div>
+            <div className="text-[10px] text-gold/70 truncate">Обсудить с коллегами</div>
           </div>
-        </div>
+        </button>
       </div>
     </>
   );

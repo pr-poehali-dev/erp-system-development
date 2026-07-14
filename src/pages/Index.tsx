@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import Layout from '@/components/Layout';
 import Icon from '@/components/ui/icon';
 import Modal from '@/components/Modal';
-import { useToast } from '@/hooks/useToast';
 
 const metrics = [
   { label: 'Новые лиды', value: '24', sub: '+12 за сегодня', icon: 'UserPlus', tone: 'ok', path: '/crm' },
@@ -129,9 +128,7 @@ const MetricModal = ({ metric, open, onClose }: { metric: typeof metrics[0] | nu
 
 const Index = () => {
   const navigate = useNavigate();
-  const { success } = useToast();
   const [metricModal, setMetricModal] = useState<typeof metrics[0] | null>(null);
-  const [showLeadModal, setShowLeadModal] = useState(false);
 
   return (
     <Layout title="Главная панель" subtitle="Добро пожаловать, Александр! Вот сводка на сегодня.">
@@ -399,82 +396,10 @@ const Index = () => {
           </div>
         </div>
 
-        {/* ── New lead promo ── */}
-        <div
-          className="glass-card-light rounded-2xl p-6 animate-fade-in opacity-0 cursor-pointer group overflow-hidden relative border-gold-gradient"
-          style={{ animationDelay: '350ms' }}
-          onClick={() => setShowLeadModal(true)}
-        >
-          <div className="absolute right-0 top-0 bottom-0 w-64 pointer-events-none">
-            <div className="absolute inset-0 bg-gradient-to-l from-gold/5 to-transparent" />
-            <div className="absolute right-8 top-1/2 -translate-y-1/2 w-24 h-24 rounded-full bg-gold/8 blur-xl animate-float" />
-          </div>
-          <div className="relative flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-2xl gold-gradient flex items-center justify-center shadow-lg shadow-gold/20 animate-float">
-                <Icon name="Zap" size={24} className="text-background" />
-              </div>
-              <div>
-                <div className="font-display font-bold text-base text-foreground group-hover:text-gold transition-colors">Быстрые действия</div>
-                <div className="text-[12px] text-muted-foreground">Создать сделку, замер, КП или задачу в один клик</div>
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="text-[11px] text-gold/70">Открыть</span>
-              <Icon name="ChevronRight" size={16} className="text-gold/50 group-hover:text-gold group-hover:translate-x-1 transition-all" />
-            </div>
-          </div>
-        </div>
       </div>
 
       {/* Metric detail modal */}
       <MetricModal metric={metricModal} open={!!metricModal} onClose={() => setMetricModal(null)} />
-
-      {/* Quick create from banner */}
-      <Modal
-        open={showLeadModal}
-        onClose={() => setShowLeadModal(false)}
-        title="Создать новый лид"
-        icon="UserPlus"
-        size="md"
-        footer={
-          <div className="flex gap-3">
-            <button onClick={() => { setShowLeadModal(false); success('Лид создан!', 'Новая сделка добавлена в воронку CRM'); }} className="flex-1 py-3 rounded-xl gold-gradient btn-gold text-background font-semibold text-sm shadow-lg shadow-gold/20">
-              Создать сделку
-            </button>
-            <button onClick={() => setShowLeadModal(false)} className="px-5 py-3 rounded-xl bg-secondary border border-border text-sm hover:border-gold/30 transition-colors">
-              Отмена
-            </button>
-          </div>
-        }
-      >
-        <div className="space-y-4 pb-2">
-          {[
-            { label: 'Имя клиента', placeholder: 'Иванова Мария Андреевна', icon: 'User' },
-            { label: 'Телефон', placeholder: '+7 (978) 000-00-00', icon: 'Phone' },
-            { label: 'Источник', placeholder: 'Instagram, ВКонтакте, Авито...', icon: 'Share2' },
-          ].map((f) => (
-            <div key={f.label}>
-              <label className="text-[11px] text-muted-foreground mb-1.5 block font-medium">{f.label}</label>
-              <div className="flex items-center gap-3 px-3.5 py-3 rounded-xl bg-secondary border border-border focus-within:border-gold/50 transition-colors">
-                <Icon name={f.icon} size={15} className="text-gold shrink-0" />
-                <input
-                  placeholder={f.placeholder}
-                  className="bg-transparent text-sm outline-none flex-1 text-foreground placeholder:text-muted-foreground/50"
-                />
-              </div>
-            </div>
-          ))}
-          <div>
-            <label className="text-[11px] text-muted-foreground mb-1.5 block font-medium">Комментарий</label>
-            <textarea
-              placeholder="Что хочет клиент?"
-              rows={3}
-              className="w-full px-3.5 py-3 rounded-xl bg-secondary border border-border focus:border-gold/50 transition-colors text-sm outline-none text-foreground placeholder:text-muted-foreground/50 resize-none"
-            />
-          </div>
-        </div>
-      </Modal>
     </Layout>
   );
 };

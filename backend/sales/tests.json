@@ -4,6 +4,7 @@
     {"name": "List measurements without auth", "method": "GET", "path": "/?resource=measurements", "expectedStatus": 401},
     {"name": "List proposals without auth", "method": "GET", "path": "/?resource=proposals", "expectedStatus": 401},
     {"name": "List specifications without auth", "method": "GET", "path": "/?resource=specifications", "expectedStatus": 401},
-    {"name": "Finance without auth", "method": "GET", "path": "/?resource=finance", "expectedStatus": 401}
+    {"name": "Finance without auth", "method": "GET", "path": "/?resource=finance", "expectedStatus": 401},
+    {"name": "Control measurements without auth", "method": "GET", "path": "/?resource=controlMeasurements", "expectedStatus": 401}
   ]
 }

@@ -401,8 +401,110 @@ def handle_finance(cur, conn, current, method, params, body, action):
     return resp(405, {'error': 'Метод не поддерживается'})
 
 
+# ============================================================
+# CONTROL MEASUREMENTS (контрольные замеры перед запуском в производство)
+# ============================================================
+
+def control_measurement_row(row: dict) -> dict:
+    return {
+        'id': row['id'], 'code': row.get('code'), 'orderId': row.get('order_id'),
+        'orderCode': row.get('order_code'), 'measurementId': row.get('measurement_id'),
+        'clientId': row['client_id'], 'clientName': row.get('client_name'),
+        'objectType': row.get('object_type'), 'measureDate': row.get('measure_date'),
+        'measureTime': row.get('measure_time'), 'managerId': row.get('manager_id'),
+        'managerName': row.get('manager_name'), 'status': row.get('status'),
+        'resultNotes': row.get('result_notes'), 'checklist': row.get('checklist') or [],
+        'createdAt': row.get('created_at'),
+    }
+
+
+CM_SELECT = """
+    cm.id, cm.code, cm.order_id, cm.measurement_id, cm.client_id, cm.object_type,
+    cm.measure_date, cm.measure_time, cm.manager_id, cm.status, cm.result_notes, cm.checklist,
+    cm.created_at, o.code as order_code,
+    c.first_name || ' ' || c.last_name as client_name,
+    e.first_name || ' ' || LEFT(e.last_name,1) || '.' as manager_name
+"""
+CM_JOINS = """
+    FROM control_measurements cm
+    JOIN clients c ON c.id = cm.client_id
+    LEFT JOIN orders o ON o.id = cm.order_id
+    LEFT JOIN employees e ON e.id = cm.manager_id
+"""
+
+DEFAULT_CHECKLIST = [
+    {"item": "Ширина проёма соответствует чертежу", "done": False},
+    {"item": "Высота потолка от чистового пола", "done": False},
+    {"item": "Расположение розеток и выключателей", "done": False},
+    {"item": "Расположение водопровода и канализации", "done": False},
+    {"item": "Наличие вентиляционного канала", "done": False},
+    {"item": "Ровность стен (отклонение ≤ 3 мм)", "done": False},
+    {"item": "Напольное покрытие уложено", "done": False},
+]
+
+
+def handle_control_measurements(cur, conn, current, method, params, body):
+    if method == 'GET':
+        cm_id = params.get('id')
+        if cm_id:
+            cur.execute(f"SELECT {CM_SELECT} {CM_JOINS} WHERE cm.id = %s", (cm_id,))
+            row = cur.fetchone()
+            if not row:
+                return resp(404, {'error': 'Контрольный замер не найден'})
+            return resp(200, {'controlMeasurement': control_measurement_row(dict(row))})
+        cur.execute(f"SELECT {CM_SELECT} {CM_JOINS} ORDER BY cm.measure_date DESC")
+        return resp(200, {'controlMeasurements': [control_measurement_row(dict(r)) for r in cur.fetchall()]})
+
+    if method == 'POST':
+        client_id = body.get('clientId')
+        measure_date = body.get('measureDate')
+        if not client_id or not measure_date:
+            return resp(400, {'error': 'Укажите клиента и дату замера'})
+        code = gen_code(cur, 'control_measurements', 'КЗ')
+        cur.execute("""
+            INSERT INTO control_measurements (code, order_id, measurement_id, client_id, object_type,
+                                                measure_date, measure_time, manager_id, status, checklist)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, 'scheduled', %s) RETURNING id
+        """, (
+            code, body.get('orderId'), body.get('measurementId'), client_id, body.get('objectType'),
+            measure_date, body.get('measureTime'), body.get('managerId') or current['id'],
+            json.dumps(body.get('checklist') or DEFAULT_CHECKLIST),
+        ))
+        new_id = cur.fetchone()['id']
+        conn.commit()
+        cur.execute(f"SELECT {CM_SELECT} {CM_JOINS} WHERE cm.id = %s", (new_id,))
+        return resp(201, {'controlMeasurement': control_measurement_row(dict(cur.fetchone()))})
+
+    if method == 'PUT':
+        cm_id = body.get('id') or params.get('id')
+        if not cm_id:
+            return resp(400, {'error': 'Не указан id контрольного замера'})
+        fields, values = [], []
+        mapping = {
+            'objectType': 'object_type', 'measureDate': 'measure_date', 'measureTime': 'measure_time',
+            'managerId': 'manager_id', 'status': 'status', 'resultNotes': 'result_notes',
+        }
+        for key, col in mapping.items():
+            if key in body:
+                fields.append(f"{col} = %s")
+                values.append(body[key])
+        if 'checklist' in body:
+            fields.append("checklist = %s")
+            values.append(json.dumps(body['checklist']))
+        if not fields:
+            return resp(400, {'error': 'Нет данных для обновления'})
+        fields.append("updated_at = now()")
+        values.append(cm_id)
+        cur.execute(f"UPDATE control_measurements SET {', '.join(fields)} WHERE id = %s", values)
+        conn.commit()
+        cur.execute(f"SELECT {CM_SELECT} {CM_JOINS} WHERE cm.id = %s", (cm_id,))
+        return resp(200, {'controlMeasurement': control_measurement_row(dict(cur.fetchone()))})
+
+    return resp(405, {'error': 'Метод не поддерживается'})
+
+
 def handler(event: dict, context) -> dict:
-    """Продажи и финансы: замеры, КП, ТЗ, платежи. Роутинг через ?resource=measurements|proposals|specifications|finance"""
+    """Продажи и финансы: замеры, КП, ТЗ, платежи, контрольные замеры. Роутинг через ?resource=measurements|proposals|specifications|finance|controlMeasurements"""
     method = event.get('httpMethod', 'GET')
     if method == 'OPTIONS':
         return {'statusCode': 200, 'headers': CORS_HEADERS, 'body': ''}
@@ -436,6 +538,8 @@ def handler(event: dict, context) -> dict:
             return handle_specifications(cur, conn, current, method, params, body)
         if resource == 'finance':
             return handle_finance(cur, conn, current, method, params, body, action)
+        if resource == 'controlMeasurements':
+            return handle_control_measurements(cur, conn, current, method, params, body)
 
         return resp(404, {'error': 'Неизвестный ресурс'})
     finally:

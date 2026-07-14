@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ToastProvider } from "@/hooks/useToast";
 import { AuthProvider } from "@/hooks/useAuth";
 import { ThemeProvider } from "@/hooks/useTheme";
+import { ChatProvider } from "@/hooks/useChat";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import Login from "./pages/Login";
 import Index from "./pages/Index";
@@ -40,34 +41,36 @@ const App = () => (
       <TooltipProvider>
         <ToastProvider>
           <AuthProvider>
-            <Toaster />
-            <Sonner />
-            <BrowserRouter>
-              <Routes>
-                <Route path="/login" element={<Login />} />
-                <Route path="/" element={withLayout(<CompanySelect />)} />
-                <Route path="/dashboard" element={withLayout(<Index />)} />
-                <Route path="/crm" element={withLayout(<CRM />)} />
-                <Route path="/clients" element={withLayout(<Clients />)} />
-                <Route path="/measurements" element={withLayout(<Measurements />)} />
-                <Route path="/control-measurements" element={withLayout(<ControlMeasurements />)} />
-                <Route path="/proposals" element={withLayout(<Proposals />)} />
-                <Route path="/orders" element={withLayout(<Orders />)} />
-                <Route path="/technology" element={withLayout(<Technology />)} />
-                <Route path="/supply" element={withLayout(<Supply />)} />
-                <Route path="/warehouse" element={withLayout(<Warehouse />)} />
-                <Route path="/production" element={withLayout(<Production />)} />
-                <Route path="/logistics" element={withLayout(<Logistics />)} />
-                <Route path="/installation" element={withLayout(<Installation />)} />
-                <Route path="/planner" element={withLayout(<Planner />)} />
-                <Route path="/marketing" element={withLayout(<Marketing />)} />
-                <Route path="/finance" element={withLayout(<Finance />)} />
-                <Route path="/reports" element={withLayout(<Reports />)} />
-                <Route path="/staff" element={withLayout(<Staff />)} />
-                <Route path="/settings" element={withLayout(<Settings />)} />
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-            </BrowserRouter>
+            <ChatProvider>
+              <Toaster />
+              <Sonner />
+              <BrowserRouter>
+                <Routes>
+                  <Route path="/login" element={<Login />} />
+                  <Route path="/" element={withLayout(<CompanySelect />)} />
+                  <Route path="/dashboard" element={withLayout(<Index />)} />
+                  <Route path="/crm" element={withLayout(<CRM />)} />
+                  <Route path="/clients" element={withLayout(<Clients />)} />
+                  <Route path="/measurements" element={withLayout(<Measurements />)} />
+                  <Route path="/control-measurements" element={withLayout(<ControlMeasurements />)} />
+                  <Route path="/proposals" element={withLayout(<Proposals />)} />
+                  <Route path="/orders" element={withLayout(<Orders />)} />
+                  <Route path="/technology" element={withLayout(<Technology />)} />
+                  <Route path="/supply" element={withLayout(<Supply />)} />
+                  <Route path="/warehouse" element={withLayout(<Warehouse />)} />
+                  <Route path="/production" element={withLayout(<Production />)} />
+                  <Route path="/logistics" element={withLayout(<Logistics />)} />
+                  <Route path="/installation" element={withLayout(<Installation />)} />
+                  <Route path="/planner" element={withLayout(<Planner />)} />
+                  <Route path="/marketing" element={withLayout(<Marketing />)} />
+                  <Route path="/finance" element={withLayout(<Finance />)} />
+                  <Route path="/reports" element={withLayout(<Reports />)} />
+                  <Route path="/staff" element={withLayout(<Staff />)} />
+                  <Route path="/settings" element={withLayout(<Settings />)} />
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
+              </BrowserRouter>
+            </ChatProvider>
           </AuthProvider>
         </ToastProvider>
       </TooltipProvider>

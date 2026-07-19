@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Sidebar from '@/components/Sidebar';
 import Icon from '@/components/ui/icon';
 import { QuickCreateModal, NotificationsModal } from '@/components/Modal';
+import GlobalSearch from '@/components/GlobalSearch';
 import { useAuth } from '@/hooks/useAuth';
 import { ThemeToggleButton } from '@/components/ThemeToggle';
 import TeamChat from '@/components/TeamChat';
@@ -16,12 +17,18 @@ interface LayoutProps {
   children: React.ReactNode;
 }
 
+// Роли, для которых не показываем переключатель компании в топбаре —
+// производственный персонал работает только в рамках назначенных заказов,
+// а не переключается между брендами компании.
+const PRODUCTION_ONLY_ROLES = ['production_master', 'installer', 'technologist', 'supply_manager', 'measurer'];
+
 const Layout = ({ title, subtitle, titleIcon, actions, children }: LayoutProps) => {
   const navigate = useNavigate();
   const { employee, logout } = useAuth();
   const { open: chatOpen, openChat, closeChat } = useChat();
   const [showQuick, setShowQuick] = useState(false);
   const [showNotifs, setShowNotifs] = useState(false);
+  const [showSearch, setShowSearch] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [mobileSidebar, setMobileSidebar] = useState(false);
 
@@ -32,13 +39,19 @@ const Layout = ({ title, subtitle, titleIcon, actions, children }: LayoutProps) 
 
   const initials = employee ? (employee.firstName[0] + (employee.lastName[0] || '')).toUpperCase() : '?';
   const fullName = employee ? `${employee.firstName} ${employee.lastName}` : 'Гость';
+  const showCompanySwitcher = !PRODUCTION_ONLY_ROLES.includes(employee?.roleSlug || '');
 
-  const today = new Date();
-  const end = new Date(today);
-  end.setDate(today.getDate() + 6);
-  const months = ['янв','фев','мар','апр','май','июн','июл','авг','сен','окт','ноя','дек'];
-  const fmt = (d: Date) => `${d.getDate()} ${months[d.getMonth()]}`;
-  const dateRange = `${fmt(today)} — ${fmt(end)} ${end.getFullYear()}`;
+  // Горячая клавиша Ctrl+K / Cmd+K — открыть глобальный поиск из любого места системы
+  useEffect(() => {
+    const handleKey = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        setShowSearch(true);
+      }
+    };
+    document.addEventListener('keydown', handleKey);
+    return () => document.removeEventListener('keydown', handleKey);
+  }, []);
 
   return (
     <div className="flex min-h-screen bg-background">
@@ -68,31 +81,69 @@ const Layout = ({ title, subtitle, titleIcon, actions, children }: LayoutProps) 
             </div>
           </div>
 
+          {/* Global search — center on lg+ */}
+          <button
+            onClick={() => setShowSearch(true)}
+            className="hidden md:flex items-center gap-2.5 px-3.5 py-2 rounded-xl glass-card hover:border-gold/30 transition-all text-muted-foreground w-[200px] lg:w-[280px] shrink-0"
+          >
+            <Icon name="Search" size={15} className="shrink-0" />
+            <span className="text-[13px] truncate flex-1 text-left">Поиск по системе…</span>
+            <span className="hidden lg:flex items-center gap-0.5 text-[10px] text-muted-foreground/60 border border-border rounded px-1.5 py-0.5 shrink-0">
+              Ctrl K
+            </span>
+          </button>
+
           {/* Right controls */}
           <div className="flex items-center gap-1.5 shrink-0">
             {/* Page actions — sm+ only */}
             <div className="hidden sm:flex items-center gap-1.5">{actions}</div>
 
-            {/* Company switcher — md+ */}
+            {/* Search icon — mobile only */}
             <button
-              onClick={() => navigate('/')}
-              className="hidden md:flex items-center gap-2 px-3 py-2 rounded-xl glass-card hover:border-gold/30 transition-all group max-w-[190px]"
+              onClick={() => setShowSearch(true)}
+              className="md:hidden w-9 h-9 rounded-xl glass-card flex items-center justify-center hover:border-gold/30 transition-all group"
+              aria-label="Поиск"
             >
-              <div className="w-5 h-5 rounded-md gold-gradient flex items-center justify-center text-[hsl(222,30%,8%)] text-[9px] font-black shrink-0">ТМ</div>
-              <span className="text-[12px] font-semibold hidden lg:inline group-hover:text-gold transition-colors truncate">Территория Мебели</span>
-              <Icon name="ChevronDown" size={12} className="text-muted-foreground shrink-0 hidden lg:block" />
+              <Icon name="Search" size={16} className="group-hover:text-gold transition-colors" />
             </button>
 
-            {/* Date — xl+ */}
-            <button className="hidden xl:flex items-center gap-1.5 px-3 py-2 rounded-xl glass-card hover:border-gold/30 transition-all">
-              <Icon name="Calendar" size={13} className="text-gold" />
-              <span className="text-[12px] text-muted-foreground whitespace-nowrap">{dateRange}</span>
+            {/* Company switcher — только для управленческих ролей */}
+            {showCompanySwitcher && (
+              <button
+                onClick={() => navigate('/')}
+                className="hidden md:flex items-center gap-2 px-3 py-2 rounded-xl glass-card hover:border-gold/30 transition-all group max-w-[190px]"
+              >
+                <div className="w-5 h-5 rounded-md gold-gradient flex items-center justify-center text-[hsl(222,30%,8%)] text-[9px] font-black shrink-0">ТМ</div>
+                <span className="text-[12px] font-semibold hidden lg:inline group-hover:text-gold transition-colors truncate">Территория Мебели</span>
+                <Icon name="ChevronDown" size={12} className="text-muted-foreground shrink-0 hidden lg:block" />
+              </button>
+            )}
+
+            {/* Planner shortcut */}
+            <button
+              onClick={() => navigate('/planner')}
+              className="hidden sm:flex w-9 h-9 rounded-xl glass-card items-center justify-center hover:border-gold/30 transition-all group"
+              aria-label="Планер"
+              title="Планер"
+            >
+              <Icon name="CalendarCheck" size={16} className="group-hover:text-gold transition-colors" />
+            </button>
+
+            {/* Chat */}
+            <button
+              onClick={openChat}
+              className="hidden sm:flex w-9 h-9 rounded-xl glass-card items-center justify-center hover:border-gold/30 transition-all group"
+              aria-label="Чат компании"
+              title="Внутренний чат"
+            >
+              <Icon name="MessageCircle" size={16} className="group-hover:text-gold transition-colors" />
             </button>
 
             {/* Notifications */}
             <button
               onClick={() => setShowNotifs(true)}
               className="relative w-9 h-9 rounded-xl glass-card flex items-center justify-center hover:border-gold/30 transition-all group"
+              aria-label="Уведомления"
             >
               <Icon name="Bell" size={16} className="group-hover:text-gold transition-colors" />
               <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-0.5 rounded-full bg-status-crit text-white text-[9px] font-bold flex items-center justify-center border-2 border-background">3</span>
@@ -100,11 +151,6 @@ const Layout = ({ title, subtitle, titleIcon, actions, children }: LayoutProps) 
 
             {/* Theme toggle */}
             <ThemeToggleButton />
-
-            {/* Help — lg+ */}
-            <button className="hidden lg:flex w-9 h-9 rounded-xl glass-card items-center justify-center hover:border-gold/30 transition-all group">
-              <Icon name="HelpCircle" size={16} className="group-hover:text-gold transition-colors" />
-            </button>
 
             {/* Quick create */}
             <button
@@ -174,6 +220,7 @@ const Layout = ({ title, subtitle, titleIcon, actions, children }: LayoutProps) 
         </div>
       </main>
 
+      <GlobalSearch open={showSearch} onClose={() => setShowSearch(false)} />
       <QuickCreateModal open={showQuick} onClose={() => setShowQuick(false)} />
       <NotificationsModal open={showNotifs} onClose={() => setShowNotifs(false)} />
       <TeamChat open={chatOpen} onOpen={openChat} onClose={closeChat} />

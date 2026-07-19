@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, FormEvent } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import Layout from '@/components/Layout';
 import Icon from '@/components/ui/icon';
 import Modal from '@/components/Modal';
@@ -33,6 +34,7 @@ const emptyForm = { firstName: '', lastName: '', phone: '', email: '', objectTyp
 
 const Clients = () => {
   const { success, error: toastError } = useToast();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [clients, setClients] = useState<ClientRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -41,6 +43,15 @@ const Clients = () => {
   const [showAdd, setShowAdd] = useState(false);
   const [form, setForm] = useState(emptyForm);
   const [submitting, setSubmitting] = useState(false);
+
+  // Открываем форму создания клиента сразу, если перешли по ссылке ?new=1
+  useEffect(() => {
+    if (searchParams.get('new') === '1') {
+      setShowAdd(true);
+      setSearchParams((prev) => { prev.delete('new'); return prev; }, { replace: true });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const load = useCallback(async () => {
     setLoading(true);

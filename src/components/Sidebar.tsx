@@ -1,29 +1,90 @@
+import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import Icon from '@/components/ui/icon';
 import { useChat } from '@/hooks/useChat';
+import { useToast } from '@/hooks/useToast';
 
-const navItems = [
+interface NavLeaf {
+  name: string;
+  path?: string;
+  icon: string;
+  soon?: boolean;
+}
+
+interface NavGroup {
+  name: string;
+  icon: string;
+  path?: string;
+  children?: NavLeaf[];
+}
+
+const NAV_TREE: NavGroup[] = [
   { name: 'Главная', icon: 'LayoutDashboard', path: '/dashboard' },
-  { name: 'Компании', icon: 'Building2', path: '/' },
-  { name: 'CRM / Сделки', icon: 'Users', path: '/crm' },
-  { name: 'Клиенты', icon: 'Contact', path: '/clients' },
-  { name: 'Замеры', icon: 'Ruler', path: '/measurements' },
-  { name: 'Контрольные замеры', icon: 'ClipboardCheck', path: '/control-measurements' },
-  { name: 'Коммерческие предложения', icon: 'FileText', path: '/proposals' },
-  { name: 'Заказы', icon: 'ClipboardList', path: '/orders' },
-  { name: 'Технология', icon: 'Cog', path: '/technology' },
-  { name: 'Снабжение', icon: 'PackageSearch', path: '/supply' },
-  { name: 'Склад', icon: 'Warehouse', path: '/warehouse' },
-  { name: 'Производство', icon: 'Factory', path: '/production' },
-  { name: 'Логистика', icon: 'Truck', path: '/logistics' },
-  { name: 'Монтаж', icon: 'Wrench', path: '/installation' },
-  { name: 'Планер и задачи', icon: 'CalendarCheck', path: '/planner' },
-  { name: 'Маркетинг', icon: 'Megaphone', path: '/marketing' },
-  { name: 'Финансы и себестоимость', icon: 'CircleDollarSign', path: '/finance' },
-  { name: 'Отчеты', icon: 'BarChart3', path: '/reports' },
-  { name: 'Сотрудники', icon: 'UserCog', path: '/staff' },
+  {
+    name: 'Клиенты', icon: 'Contact',
+    children: [
+      { name: 'Все клиенты', icon: 'Users', path: '/clients' },
+      { name: 'Создать клиента', icon: 'UserPlus', path: '/clients?new=1' },
+    ],
+  },
+  {
+    name: 'Продажи', icon: 'ShoppingBag',
+    children: [
+      { name: 'Заявки', icon: 'ClipboardList', path: '/crm' },
+      { name: 'Замеры', icon: 'Ruler', path: '/measurements' },
+      { name: 'Коммерческие предложения', icon: 'FileText', path: '/proposals' },
+      { name: 'Договоры', icon: 'FileSignature', soon: true },
+      { name: 'Маркетинг', icon: 'Megaphone', path: '/marketing' },
+    ],
+  },
+  {
+    name: 'Производство', icon: 'Factory',
+    children: [
+      { name: 'Заказы', icon: 'ClipboardList', path: '/orders' },
+      { name: 'Конструктор заказа', icon: 'Layers', soon: true },
+      { name: 'Заказы в работе', icon: 'Factory', path: '/production' },
+      { name: 'Контрольные замеры', icon: 'ClipboardCheck', path: '/control-measurements' },
+      { name: 'Монтаж', icon: 'Wrench', path: '/installation' },
+      { name: 'Архив', icon: 'Archive', soon: true },
+    ],
+  },
+  {
+    name: 'Склад', icon: 'Warehouse',
+    children: [
+      { name: 'Материалы', icon: 'Package', path: '/warehouse' },
+      { name: 'Группы', icon: 'Boxes', soon: true },
+      { name: 'Спецификации', icon: 'Cog', path: '/technology' },
+      { name: 'Сметы', icon: 'Calculator', soon: true },
+      { name: 'Поставщики и поставки', icon: 'PackageSearch', path: '/supply' },
+    ],
+  },
+  {
+    name: 'Логистика', icon: 'Truck',
+    children: [
+      { name: 'Доставка', icon: 'Truck', path: '/logistics' },
+      { name: 'Монтаж', icon: 'Wrench', path: '/installation' },
+    ],
+  },
+  {
+    name: 'Компания', icon: 'Building2',
+    children: [
+      { name: 'Структура', icon: 'GitBranch', soon: true },
+      { name: 'Отделы', icon: 'Layers', soon: true },
+      { name: 'Сотрудники', icon: 'UserCog', path: '/staff' },
+    ],
+  },
+  { name: 'Планер', icon: 'CalendarCheck', path: '/planner' },
+  {
+    name: 'Отчеты', icon: 'BarChart3',
+    children: [
+      { name: 'Аналитика и отчёты', icon: 'BarChart3', path: '/reports' },
+      { name: 'Финансы и себестоимость', icon: 'CircleDollarSign', path: '/finance' },
+    ],
+  },
   { name: 'Настройки', icon: 'Settings', path: '/settings' },
 ];
+
+const basePath = (p?: string) => (p ? p.split('?')[0] : '');
 
 interface SidebarProps {
   mobileOpen?: boolean;
@@ -34,10 +95,40 @@ const NavContent = ({ onClose }: { onClose?: () => void }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const { openChat } = useChat();
+  const { info } = useToast();
+  const [expanded, setExpanded] = useState<string[]>([]);
+
+  // Автоматически раскрываем группу, содержащую активную страницу
+  useEffect(() => {
+    const activeGroup = NAV_TREE.find((g) =>
+      g.children?.some((c) => c.path && basePath(c.path) === location.pathname)
+    );
+    if (activeGroup && !expanded.includes(activeGroup.name)) {
+      setExpanded((prev) => [...prev, activeGroup.name]);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.pathname]);
+
+  const toggleGroup = (name: string) => {
+    setExpanded((prev) => (prev.includes(name) ? prev.filter((n) => n !== name) : [...prev, name]));
+  };
 
   const go = (path: string) => {
     navigate(path);
     onClose?.();
+  };
+
+  const handleLeafClick = (leaf: NavLeaf) => {
+    if (leaf.soon) {
+      info('Раздел в разработке', `«${leaf.name}» появится в одном из следующих обновлений`);
+      return;
+    }
+    if (leaf.path) go(leaf.path);
+  };
+
+  const isGroupActive = (g: NavGroup) => {
+    if (g.path) return location.pathname === basePath(g.path);
+    return g.children?.some((c) => c.path && basePath(c.path) === location.pathname) ?? false;
   };
 
   return (
@@ -63,30 +154,92 @@ const NavContent = ({ onClose }: { onClose?: () => void }) => {
 
       {/* Nav */}
       <nav className="flex-1 overflow-y-auto scrollbar-thin py-2 px-2.5">
-        {navItems.map((item) => {
-          const isActive = location.pathname === item.path;
-          return (
-            <button
-              key={item.name}
-              onClick={() => go(item.path)}
-              className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl mb-0.5 text-[13px] text-left transition-all duration-200 group ${
-                isActive
-                  ? 'bg-sidebar-accent text-gold font-semibold shadow-sm'
-                  : 'text-sidebar-foreground hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground'
-              }`}
-            >
-              <Icon
-                name={item.icon}
-                size={16}
-                className={`shrink-0 transition-colors ${
-                  isActive ? 'text-gold' : 'text-sidebar-foreground/80 group-hover:text-sidebar-accent-foreground'
+        {NAV_TREE.map((group) => {
+          const active = isGroupActive(group);
+          const isOpen = expanded.includes(group.name);
+
+          if (!group.children) {
+            return (
+              <button
+                key={group.name}
+                onClick={() => go(group.path!)}
+                className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl mb-0.5 text-[13px] text-left transition-all duration-200 group ${
+                  active
+                    ? 'bg-sidebar-accent text-gold font-semibold shadow-sm'
+                    : 'text-sidebar-foreground hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground'
                 }`}
-              />
-              <span className="truncate flex-1">{item.name}</span>
-              {isActive && (
-                <div className="w-1.5 h-1.5 rounded-full bg-gold shrink-0 shadow-sm shadow-gold/50" />
+              >
+                <Icon
+                  name={group.icon}
+                  size={16}
+                  className={`shrink-0 transition-colors ${
+                    active ? 'text-gold' : 'text-sidebar-foreground/80 group-hover:text-sidebar-accent-foreground'
+                  }`}
+                />
+                <span className="truncate flex-1">{group.name}</span>
+                {active && <div className="w-1.5 h-1.5 rounded-full bg-gold shrink-0 shadow-sm shadow-gold/50" />}
+              </button>
+            );
+          }
+
+          return (
+            <div key={group.name} className="mb-0.5">
+              <button
+                onClick={() => toggleGroup(group.name)}
+                className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-[13px] text-left transition-all duration-200 group ${
+                  active && !isOpen
+                    ? 'bg-sidebar-accent text-gold font-semibold shadow-sm'
+                    : 'text-sidebar-foreground hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground'
+                }`}
+              >
+                <Icon
+                  name={group.icon}
+                  size={16}
+                  className={`shrink-0 transition-colors ${
+                    active ? 'text-gold' : 'text-sidebar-foreground/80 group-hover:text-sidebar-accent-foreground'
+                  }`}
+                />
+                <span className="truncate flex-1">{group.name}</span>
+                <Icon
+                  name="ChevronRight"
+                  size={13}
+                  className={`shrink-0 transition-transform duration-200 text-sidebar-foreground/50 ${isOpen ? 'rotate-90' : ''}`}
+                />
+              </button>
+
+              {isOpen && (
+                <div className="ml-3.5 pl-3 border-l border-sidebar-border/70 mt-0.5 mb-1 space-y-0.5" style={{ animation: 'fade-in 0.25s ease forwards' }}>
+                  {group.children.map((leaf) => {
+                    const leafActive = leaf.path ? basePath(leaf.path) === location.pathname : false;
+                    return (
+                      <button
+                        key={leaf.name}
+                        onClick={() => handleLeafClick(leaf)}
+                        className={`w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-[12.5px] text-left transition-all duration-200 group ${
+                          leafActive
+                            ? 'bg-sidebar-accent text-gold font-semibold'
+                            : leaf.soon
+                              ? 'text-sidebar-foreground/45 hover:text-sidebar-foreground/70'
+                              : 'text-sidebar-foreground/85 hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground'
+                        }`}
+                      >
+                        <Icon
+                          name={leaf.icon}
+                          size={14}
+                          className={`shrink-0 ${leafActive ? 'text-gold' : leaf.soon ? 'text-sidebar-foreground/35' : 'text-sidebar-foreground/70 group-hover:text-sidebar-accent-foreground'}`}
+                        />
+                        <span className="truncate flex-1">{leaf.name}</span>
+                        {leaf.soon && (
+                          <span className="shrink-0 text-[9px] px-1.5 py-0.5 rounded-full bg-sidebar-accent/70 text-sidebar-foreground/50 font-medium tracking-wide">
+                            Скоро
+                          </span>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
               )}
-            </button>
+            </div>
           );
         })}
       </nav>
